@@ -139,4 +139,47 @@ git add .
 git commit -m "commitname"
 git push 
 
+# pull latest changes from main 
+git checkout main 
+git pull origin main 
+
+# pull latest changes from develop 
+git checkout develop 
+git pull origin develop 
+
+# pull latest changes while on the branch 
+(update develop first)
+git checkout develop 
+git pull origin develop 
+(go back)
+git checkout feature/login 
+(merge lastest develop)
+git merge develop
+
+# fetch w/o updating files 
+git fetch origin 
+
+# view commit history 
+git log --oneline
+(graph view)
+git log --graph --oneline --decorate 
+
+# see remote branches 
+git branch -r
+
+# see all branches 
+git branch -a 
+
+# switch branches 
+git checkout develop 
+or 
+git checkout feature/login 
+
+# delete local branch 
+git branch -d feature/login 
+(force delete)
+git branch -D feature/login 
+
+# deleta a remote branch 
+git push origin --delete feature/login 
 
