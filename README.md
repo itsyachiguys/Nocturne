@@ -95,3 +95,48 @@ main
 **26 June 2026**
 
 Initial project setup completed.
+
+# check your current branch 
+git branch 
+
+# check status 
+git status 
+
+# stage all changes 
+git add . 
+or use : git add README.md 
+
+# commit changes 
+git commit -m "nameofthecommit"
+
+# push to current branch 
+git push iu origin feature/login   (only if first push to a new branch)
+or use : git push 
+
+# commit to main 
+git checkout main 
+git pull origin main 
+git add . 
+git commit -m "updates"
+git push origin main 
+
+# create a new branch 
+git checkout main 
+git pull origin main 
+git checkout -b feature/newfeature 
+git push -u origin feature/newfeature 
+
+# create a feature branch from develop 
+git checkout develop 
+git pull origin develop 
+git checkout -b feature/login 
+git push -u origin feature/login 
+
+# commit to a feature branch 
+(switch to the branch) git checkout feature/login 
+then 
+git add . 
+git commit -m "commitname"
+git push 
+
+
