@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  IconMoonStars,
   IconArrowRight,
   IconPlayerPlay,
   IconUpload,
@@ -13,6 +12,7 @@ import {
   IconShare3,
 } from "@tabler/icons-react";
 import { FeatureCard } from "@/components/FeatureCard";
+import { Logo } from "@/components/common/Logo";
 
 const FEATURES = [
   { icon: IconUpload, bg: "bg-lavender/10", color: "text-lavender-dark", title: "Upload PDFs", description: "Drop lecture slides or textbooks, get structured content instantly." },
@@ -29,12 +29,7 @@ export default function LandingPage() {
   return (
     <div>
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-12 py-5">
-        <div className="flex items-center gap-2 font-display text-xl font-extrabold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-gradient text-white">
-            <IconMoonStars size={18} />
-          </div>
-          Nocturne
-        </div>
+        <Logo />
         <div className="hidden gap-8 text-sm font-semibold text-ink-secondary dark:text-ink-secondary-dark md:flex">
           <a href="#features">Features</a>
           <a href="#why">Why Nocturne</a>

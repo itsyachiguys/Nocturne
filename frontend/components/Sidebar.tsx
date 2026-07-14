@@ -81,11 +81,10 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-[250px] flex-shrink-0 flex-col gap-1 border-r border-line bg-surface-card p-4 dark:border-line-dark dark:bg-surface-card-dark">
-      <div className="mb-6 flex items-center gap-2 px-2 font-display text-xl font-extrabold">
+      <div className="mb-6 flex items-center px-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-gradient text-white">
           <IconMoonStars size={18} />
         </div>
-        Nocturne
       </div>
 
       {NAV_GROUPS.map((group) => (

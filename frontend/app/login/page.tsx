@@ -9,9 +9,7 @@ import { AuthInput } from "@/components/AuthInput";
 
 export default function LoginPage() {
   const router = useRouter();
-
-  // No backend wired up yet — submitting just drops you into the
-  // dashboard so the flow can be clicked through end to end.
+  
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     router.push("/dashboard");
