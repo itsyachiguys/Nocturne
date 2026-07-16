@@ -12,7 +12,7 @@ import {
   IconShare3,
 } from "@tabler/icons-react";
 import { FeatureCard } from "@/components/FeatureCard";
-import { Logo } from "@/components/common/Logo";
+import Logo from "@/components/common/Logo";
 
 const FEATURES = [
   { icon: IconUpload, bg: "bg-lavender/10", color: "text-lavender-dark", title: "Upload PDFs", description: "Drop lecture slides or textbooks, get structured content instantly." },

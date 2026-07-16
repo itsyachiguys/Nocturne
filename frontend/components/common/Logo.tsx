@@ -1,24 +1,47 @@
 import Image from "next/image";
+import Link from "next/link";
 
 interface LogoProps {
-  /** Show the "Nocturne" wordmark next to the mark. Default true. */
-  showText?: boolean;
-  /** Pixel size of the logo mark (square). Default 32. */
   size?: number;
+  showText?: boolean;
 }
 
-export function Logo({ showText = true, size = 32 }: LogoProps) {
+export default function Logo({
+  size = 56,
+  showText = true,
+}: LogoProps) {
   return (
-    <div className="flex items-center gap-2 font-display text-xl font-extrabold">
-      <Image
-        src="/logo.png"
-        alt="Nocturne"
-        width={size}
-        height={size}
-        className="rounded-full object-cover"
-        priority
-      />
-      {showText && "Nocturne"}
-    </div>
+    <Link
+      href="/"
+      className="flex items-center gap-3 select-none"
+    >
+      <div
+        className="relative overflow-hidden rounded-full shadow-md border border-violet-200 bg-white"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+        }}
+      >
+        <Image
+          src="/logo.png" // put your logo inside frontend/public/logo.png
+          alt="Nocturne Logo"
+          fill
+          priority
+          className="object-cover"
+        />
+      </div>
+
+      {showText && (
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-violet-700">
+            Nocturne
+          </h1>
+
+          <p className="text-xs text-slate-500">
+            AI Powered Student Platform
+          </p>
+        </div>
+      )}
+    </Link>
   );
 }

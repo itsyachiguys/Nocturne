@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconArrowLeft, IconArrowRight, IconBrandGoogle } from "@tabler/icons-react";
 import { AuthPanel } from "@/components/AuthPanel";
 import { AuthInput } from "@/components/AuthInput";
+import Image from "next/image";
 
 export default function SignupPage() {
   const router = useRouter();
