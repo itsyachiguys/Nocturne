@@ -122,6 +122,24 @@ or use : git push
 
 # commit to main
 
+# check your current branch 
+git branch 
+
+# check status 
+git status 
+
+# stage all changes 
+git add . 
+or use : git add README.md 
+
+# commit changes 
+git commit -m "nameofthecommit"
+
+# push to current branch 
+git push iu origin feature/login   (only if first push to a new branch)
+or use : git push 
+
+# commit to main 
 git checkout main 
 git pull origin main 
 git add . 
@@ -130,6 +148,7 @@ git push origin main
 
 # create a new branch
 
+# create a new branch 
 git checkout main 
 git pull origin main 
 git checkout -b feature/newfeature 
@@ -137,6 +156,7 @@ git push -u origin feature/newfeature
 
 # create a feature branch from develop
 
+# create a feature branch from develop 
 git checkout develop 
 git pull origin develop 
 git checkout -b feature/login 
@@ -144,6 +164,7 @@ git push -u origin feature/login
 
 # commit to a feature branch
 
+# commit to a feature branch 
 (switch to the branch) git checkout feature/login 
 then 
 git add . 
@@ -162,6 +183,15 @@ git pull origin develop
 
 # pull latest changes while on the branch
 
+# pull latest changes from main 
+git checkout main 
+git pull origin main 
+
+# pull latest changes from develop 
+git checkout develop 
+git pull origin develop 
+
+# pull latest changes while on the branch 
 (update develop first)
 git checkout develop 
 git pull origin develop 
@@ -176,6 +206,10 @@ git fetch origin
 
 # view commit history
 
+# fetch w/o updating files 
+git fetch origin 
+
+# view commit history 
 git log --oneline
 (graph view)
 git log --graph --oneline --decorate 
@@ -190,12 +224,20 @@ git branch -a
 
 # switch branches
 
+# see remote branches 
+git branch -r
+
+# see all branches 
+git branch -a 
+
+# switch branches 
 git checkout develop 
 or 
 git checkout feature/login 
 
 # delete local branch
 
+# delete local branch 
 git branch -d feature/login 
 (force delete)
 git branch -D feature/login 
@@ -203,3 +245,6 @@ git branch -D feature/login
 # deleta a remote branch
 
 git push origin --delete feature/login 
+# deleta a remote branch 
+git push origin --delete feature/login 
+
