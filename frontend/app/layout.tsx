@@ -1,26 +1,45 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
-
 export const metadata: Metadata = {
-  title: "Nocturne — Your AI powered student operating system",
+  title: {
+    default: "Nocturne",
+    template: "%s | Nocturne",
+  },
+
   description:
-    "Manage academics, generate AI notes and quizzes, track attendance, and plan your entire student life from one workspace.",
+    "AI-powered learning platform for students. Upload notes, generate AI summaries, quizzes, flashcards, and track academic progress.",
+
+  keywords: [
+    "Nocturne",
+    "AI Learning",
+    "Student Platform",
+    "Notes",
+    "Quiz",
+    "Education",
+  ],
+
+  authors: [
+    {
+      name: "Nocturne Team",
+    },
+  ],
+
+  icons: {
+    icon: "/Logo.png",
+    shortcut: "/Logo.png",
+    apple: "/Logo.png",
+  },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${manrope.variable} font-body bg-surface-bg text-ink-primary dark:bg-surface-bg-dark dark:text-ink-primary-dark transition-colors`}
-      >
+    <html lang="en">
+      <body className="min-h-screen antialiased bg-slate-50 text-slate-900">
         {children}
       </body>
     </html>

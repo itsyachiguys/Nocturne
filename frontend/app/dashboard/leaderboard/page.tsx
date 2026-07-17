@@ -5,19 +5,46 @@ import { LEADERBOARD } from "@/lib/dashboard-data";
 export default function LeaderboardPage() {
   return (
     <>
-      <PageHeader title="Leaderboard" subtitle="Ranked by weekly study points" />
-      <div className="card divide-y divide-line dark:divide-line-dark">
-        {LEADERBOARD.map((entry) => (
+      <PageHeader 
+        title="Leaderboard" 
+        subtitle="Ranked by weekly study points" 
+      />
+
+      <div className="card divide-y divide-line dark:divide-line-dark overflow-hidden">
+        {LEADERBOARD.map((entry, idx) => (
           <div
-            key={entry.rank}
-            className={`flex items-center gap-3 p-4 ${entry.isCurrentUser ? "bg-lavender/5" : ""}`}
+            key={idx}
+            className={`flex items-center gap-5 p-5 transition-all hover:bg-surface-alt dark:hover:bg-surface-alt-dark ${
+              entry.isCurrentUser ? "bg-lavender/10" : ""
+            }`}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-alt text-sm font-bold dark:bg-surface-alt-dark">
-              {entry.rank <= 3 ? <IconTrophy size={16} className="text-pastel-orange" /> : entry.rank}
+            {/* Rank */}
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-surface-alt font-mono text-lg font-bold dark:bg-surface-alt-dark">
+              {entry.rank <= 3 ? (
+                <IconTrophy size={22} className="text-pastel-orange" />
+              ) : (
+                entry.rank
+              )}
             </div>
-            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-sky" />
-            <p className={`flex-1 text-sm ${entry.isCurrentUser ? "font-semibold" : ""}`}>{entry.name}</p>
-            <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">{entry.points}</p>
+
+            {/* Avatar */}
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-mint to-sky flex-shrink-0" />
+
+            {/* Name & Info */}
+            <div className="flex-1">
+              <p className={`text-[15px] ${entry.isCurrentUser ? "font-semibold text-lavender-dark" : "font-medium"}`}>
+                {entry.name}
+              </p>
+              {entry.isCurrentUser && (
+                <p className="text-xs text-lavender">You are here</p>
+              )}
+            </div>
+
+            {/* Points */}
+            <div className="text-right">
+              <p className="text-xl font-semibold text-ink-primary">{entry.points}</p>
+              <p className="text-[10px] uppercase tracking-widest text-ink-secondary">pts</p>
+            </div>
           </div>
         ))}
       </div>

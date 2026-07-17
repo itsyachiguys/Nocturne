@@ -1,4 +1,4 @@
-import { IconPlus, IconPlayerPlay } from "@tabler/icons-react";
+import { IconPlus, IconPlayerPlay, IconCheck } from "@tabler/icons-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PLANNER_TASKS, WEEKLY_GOAL } from "@/lib/planning-data";
 
@@ -7,44 +7,78 @@ export default function PlannerPage() {
 
   return (
     <>
-      <PageHeader title="Planner" subtitle="Today's tasks and weekly goals" actionLabel="Add task" actionIcon={IconPlus} />
+      <PageHeader 
+        title="Planner" 
+        subtitle="Today's tasks and weekly goals" 
+        actionLabel="Add task" 
+        actionIcon={IconPlus} 
+      />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <div className="card p-5">
-          <h4 className="mb-4 text-[14.5px]">Today</h4>
-          {PLANNER_TASKS.map((task) => (
-            <div key={task.id} className="flex items-center gap-3 border-b border-line py-3 text-sm last:border-none dark:border-line-dark">
-              <div
-                className={`h-4.5 w-4.5 flex-shrink-0 rounded-sm border-2 ${
-                  task.done ? "border-mint bg-mint" : "border-line dark:border-line-dark"
-                }`}
-              />
-              <div className={task.done ? "flex-1 opacity-50 line-through" : "flex-1"}>
-                <p>{task.title}</p>
-                <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark">{task.subject} · {task.due}</p>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
+        
+        {/* Today's Tasks */}
+        <div className="card p-6">
+          <h4 className="mb-6 text-[15px] font-semibold text-ink-primary">Today’s Tasks</h4>
+          
+          <div className="space-y-4">
+            {PLANNER_TASKS.map((task) => (
+              <div 
+                key={task.id} 
+                className="flex items-start gap-4 border-b border-line pb-4 last:border-none dark:border-line-dark"
+              >
+                <div
+                  className={`mt-0.5 h-5 w-5 flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${
+                    task.done 
+                      ? "border-mint bg-mint" 
+                      : "border-line dark:border-line-dark hover:border-lavender"
+                  }`}
+                >
+                  {task.done && <IconCheck size={14} className="text-white" />}
+                </div>
+                
+                <div className={`flex-1 ${task.done ? "opacity-60 line-through" : ""}`}>
+                  <p className="text-[15px]">{task.title}</p>
+                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
+                    {task.subject} • Due {task.due}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        <div>
-          <div className="card mb-4 p-5">
-            <h4 className="mb-3 text-[14.5px]">Weekly goal</h4>
-            <div className="mb-2 flex items-baseline gap-1.5">
-              <span className="font-display text-2xl font-extrabold">{WEEKLY_GOAL.completed}</span>
-              <span className="text-sm text-ink-secondary dark:text-ink-secondary-dark">/ {WEEKLY_GOAL.target} tasks</span>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          
+          {/* Weekly Goal */}
+          <div className="card p-6">
+            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary">Weekly Goal</h4>
+            
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="font-display text-4xl font-bold text-lavender-dark">
+                {WEEKLY_GOAL.completed}
+              </span>
+              <span className="text-xl text-ink-secondary">/ {WEEKLY_GOAL.target}</span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark">
-              <div className="h-1.5 rounded-full bg-brand-gradient" style={{ width: `${goalPct}%` }} />
+
+            <div className="h-2.5 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark mb-2">
+              <div 
+                className="h-2.5 rounded-full bg-brand-gradient" 
+                style={{ width: `${goalPct}%` }} 
+              />
             </div>
+            <p className="text-xs text-ink-secondary">{goalPct}% completed</p>
           </div>
 
-          <div className="card p-5 text-center">
-            <h4 className="mb-3 text-[14.5px]">Pomodoro</h4>
-            <p className="font-display text-4xl font-extrabold">25:00</p>
-            <p className="mb-4 text-xs text-ink-secondary dark:text-ink-secondary-dark">Focus session</p>
-            <button className="btn-primary mx-auto">
-              <IconPlayerPlay size={16} /> Start
+          {/* Pomodoro Timer */}
+          <div className="card p-6 text-center">
+            <h4 className="mb-2 text-[15px] font-semibold text-ink-primary">Pomodoro Timer</h4>
+            <p className="font-display text-6xl font-bold tracking-tighter text-lavender-dark mb-2">25:00</p>
+            <p className="text-sm text-ink-secondary mb-6">Focus Session</p>
+            
+            <button className="btn-primary mx-auto flex items-center gap-2 px-8 py-3">
+              <IconPlayerPlay size={18} />
+              Start Focus
             </button>
           </div>
         </div>
