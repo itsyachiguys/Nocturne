@@ -83,7 +83,7 @@ export default function LandingPage() {
           <div className="card absolute inset-0 overflow-hidden p-6 shadow-floating">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm font-bold">Good evening, Aria</p>
-              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sky to-soft-purple" />
+              <div className="h-7 w-7 rounded-full bg-linear-to-br from-sky to-soft-purple" />
             </div>
             <div className="mb-4 grid grid-cols-2 gap-3.5">
               {[
@@ -100,7 +100,7 @@ export default function LandingPage() {
             </div>
             <div className="flex h-32 items-end gap-2">
               {[40, 65, 50, 80, 55, 70, 45].map((h, i) => (
-                <div key={i} className="flex-1 rounded-t-md bg-gradient-to-b from-soft-purple to-lavender-dark" style={{ height: `${h}%` }} />
+                <div key={i} className="flex-1 rounded-t-md bg-linear-to-b from-soft-purple to-lavender-dark" style={{ height: `${h}%` }} />
               ))}
             </div>
           </div>
