@@ -10,31 +10,50 @@ function strengthColor(score: number) {
 export default function AnalyticsPage() {
   return (
     <>
-      <PageHeader title="Analytics" subtitle="Preparation, retention, and predicted performance" />
+      <PageHeader 
+        title="Analytics" 
+        subtitle="Preparation, retention, and predicted performance" 
+      />
 
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {ANALYTICS_METRICS.map((metric) => (
-          <div key={metric.label} className="card p-5">
-            <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">{metric.label}</p>
-            <p className="font-display text-2xl font-extrabold">{metric.value}</p>
-            <p className="mt-1.5 text-[11px] text-ink-muted dark:text-ink-muted-dark">{metric.note}</p>
+      {/* Key Metrics */}
+      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {ANALYTICS_METRICS.map((metric, idx) => (
+          <div key={idx} className="card p-6 hover:shadow-soft transition-shadow">
+            <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
+              {metric.label}
+            </p>
+            <p className="mt-3 font-display text-4xl font-bold text-ink-primary">
+              {metric.value}
+            </p>
+            <p className="mt-2 text-sm text-ink-muted dark:text-ink-muted-dark">
+              {metric.note}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="card p-5">
-        <h4 className="mb-4 text-[14.5px]">Strong and weak subjects</h4>
-        {SUBJECT_STRENGTH.map((s) => (
-          <div key={s.subject} className="border-b border-line py-3 last:border-none dark:border-line-dark">
-            <div className="mb-1.5 flex items-center justify-between text-sm">
-              <span>{s.subject}</span>
-              <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">{s.score}%</span>
+      {/* Subject Strength */}
+      <div className="card p-6">
+        <h4 className="mb-6 text-[15px] font-semibold text-ink-primary">
+          Subject Strength
+        </h4>
+        
+        <div className="space-y-6">
+          {SUBJECT_STRENGTH.map((s, idx) => (
+            <div key={idx} className="group">
+              <div className="mb-2 flex items-center justify-between text-sm">
+                <span className="font-medium text-ink-primary">{s.subject}</span>
+                <span className="font-mono text-lavender-dark">{s.score}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark overflow-hidden">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${strengthColor(s.score)}`}
+                  style={{ width: `${s.score}%` }}
+                />
+              </div>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark">
-              <div className={`h-1.5 rounded-full ${strengthColor(s.score)}`} style={{ width: `${s.score}%` }} />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </>
   );
