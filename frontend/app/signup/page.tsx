@@ -1,18 +1,86 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft, IconArrowRight, IconBrandGoogle } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconBrandGoogle,
+} from "@tabler/icons-react";
+import { FirebaseError } from "firebase/app";
+
 import { AuthPanel } from "@/components/AuthPanel";
 import { AuthInput } from "@/components/AuthInput";
-import Image from "next/image";
+import { AuthService } from "@/services/auth.service";
 
 export default function SignupPage() {
   const router = useRouter();
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
-    router.push("/dashboard");
+
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(event.currentTarget);
+
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    try {
+      await AuthService.register(name, email, password);
+
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/email-already-in-use":
+            setError("An account with this email already exists.");
+            break;
+
+          case "auth/invalid-email":
+            setError("Please enter a valid email address.");
+            break;
+
+          case "auth/weak-password":
+            setError("Password should be at least 6 characters.");
+            break;
+
+          default:
+            setError(err.message);
+        }
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignup() {
+    setLoading(true);
+    setError("");
+
+    try {
+      await AuthService.signInWithGoogle();
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError("Google sign-in failed.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -35,7 +103,12 @@ export default function SignupPage() {
             Set up your workspace and start your first study streak today.
           </p>
 
-          <button type="button" className="btn-ghost mb-6 w-full justify-center">
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={loading}
+            className="btn-ghost mb-6 w-full justify-center disabled:opacity-50"
+          >
             <IconBrandGoogle size={17} />
             Continue with Google
           </button>
@@ -45,6 +118,12 @@ export default function SignupPage() {
             or continue with email
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
           </div>
+
+          {error && (
+            <div className="mb-4 rounded-sm border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <AuthInput
@@ -79,9 +158,13 @@ export default function SignupPage() {
               I agree to the Terms of Service and Privacy Policy
             </label>
 
-            <button type="submit" className="btn-primary w-full justify-center">
-              Create account
-              <IconArrowRight size={16} />
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full justify-center disabled:opacity-50"
+            >
+              {loading ? "Creating Account..." : "Create account"}
+              {!loading && <IconArrowRight size={16} />}
             </button>
           </form>
 
