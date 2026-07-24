@@ -1,19 +1,91 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft, IconArrowRight, IconBrandGoogle } from "@tabler/icons-react";
+
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconBrandGoogle,
+} from "@tabler/icons-react";
+
+import { FirebaseError } from "firebase/app";
+
 import { AuthPanel } from "@/components/AuthPanel";
 import { AuthInput } from "@/components/AuthInput";
-import Image from "next/image";
+import { AuthService } from "@/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
-  
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
-    router.push("/dashboard");
+
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(event.currentTarget);
+
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    try {
+      await AuthService.login(email, password);
+
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/invalid-credential":
+          case "auth/wrong-password":
+          case "auth/user-not-found":
+            setError("Invalid email or password.");
+            break;
+
+          case "auth/invalid-email":
+            setError("Please enter a valid email address.");
+            break;
+
+          case "auth/too-many-requests":
+            setError(
+              "Too many failed attempts. Please try again later."
+            );
+            break;
+
+          default:
+            setError(err.message);
+        }
+      } else {
+        setError("Something went wrong.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setLoading(true);
+    setError("");
+
+    try {
+      await AuthService.signInWithGoogle();
+
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError("Google sign-in failed.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,16 +98,26 @@ export default function LoginPage() {
             href="/"
             className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary hover:text-ink-primary dark:text-ink-secondary-dark dark:hover:text-ink-primary-dark"
           >
-            <IconArrowLeft size={15} /> Back to home
+            <IconArrowLeft size={15} />
+            Back to home
           </Link>
 
-          <h1 className="mb-2 text-[28px]">Welcome back</h1>
+          <h1 className="mb-2 text-[28px]">
+            Welcome back
+          </h1>
+
           <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark">
             Log in to pick up your streak where you left off.
           </p>
 
-          <button type="button" className="btn-ghost mb-6 w-full justify-center">
-            <IconBrandGoogle size={17} /> Continue with Google
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="btn-ghost mb-6 w-full justify-center disabled:opacity-50"
+          >
+            <IconBrandGoogle size={17} />
+            Continue with Google
           </button>
 
           <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-ink-muted dark:text-ink-muted-dark">
@@ -44,7 +126,16 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {error && (
+            <div className="mb-4 rounded-sm border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-5"
+          >
             <AuthInput
               label="Email"
               type="email"
@@ -52,6 +143,7 @@ export default function LoginPage() {
               placeholder="you@university.edu"
               autoComplete="email"
             />
+
             <AuthInput
               label="Password"
               type="password"
@@ -68,19 +160,32 @@ export default function LoginPage() {
                 />
                 Remember me
               </label>
-              <button type="button" className="font-semibold text-lavender-dark">
+
+              <button
+                type="button"
+                className="font-semibold text-lavender-dark"
+              >
                 Forgot password?
               </button>
             </div>
 
-            <button type="submit" className="btn-primary w-full justify-center">
-              Log in <IconArrowRight size={16} />
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full justify-center disabled:opacity-50"
+            >
+              {loading ? "Logging in..." : "Log in"}
+
+              {!loading && <IconArrowRight size={16} />}
             </button>
           </form>
 
           <p className="mt-8 text-center text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
             New to Nocturne?{" "}
-            <Link href="/signup" className="font-semibold text-lavender-dark">
+            <Link
+              href="/signup"
+              className="font-semibold text-lavender-dark"
+            >
               Create an account
             </Link>
           </p>
