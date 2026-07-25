@@ -1,5 +1,6 @@
 "use client";
 
+import { auth } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -66,6 +67,10 @@ export default function SubjectPage() {
       </div>
     );
   }
+
+  console.log("Logged-in UID:", auth.currentUser?.uid);
+  console.log("Subject studentId:", subject.studentId);
+  console.log("Match:", auth.currentUser?.uid === subject.studentId);
 
   return (
     <>

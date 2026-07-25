@@ -38,12 +38,11 @@ export default function CreateModuleModal({
   
       console.log("Authenticated User:", auth.currentUser.uid);
   
-      console.log("Creating Module:", {
+      console.log({
+        authUid: auth.currentUser?.uid,
         studentId,
         subjectId,
-        name,
-        description,
-        order,
+        equal: auth.currentUser?.uid === studentId,
       });
   
       await ModuleService.create({
