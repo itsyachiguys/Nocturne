@@ -20,8 +20,8 @@ export default function SubjectPage() {
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-
   const [loading, setLoading] = useState(true);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   async function loadSubject() {
@@ -36,9 +36,9 @@ export default function SubjectPage() {
 
   useEffect(() => {
     async function load() {
-      try {
-        setLoading(true);
+      setLoading(true);
 
+      try {
         await Promise.all([
           loadSubject(),
           loadModules(),
@@ -76,12 +76,9 @@ export default function SubjectPage() {
 
       <div className="grid gap-6">
 
-        {/* Stats */}
-
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
 
           <div className="card p-6">
-
             <p className="text-sm text-muted-foreground">
               Progress
             </p>
@@ -89,11 +86,9 @@ export default function SubjectPage() {
             <h2 className="mt-2 text-3xl font-bold">
               {subject.progress ?? 0}%
             </h2>
-
           </div>
 
           <div className="card p-6">
-
             <p className="text-sm text-muted-foreground">
               Attendance
             </p>
@@ -101,53 +96,45 @@ export default function SubjectPage() {
             <h2 className="mt-2 text-3xl font-bold">
               {subject.attendance ?? 0}%
             </h2>
-
           </div>
 
         </div>
 
-        {/* Subject Information */}
-
         <div className="card p-6">
 
-          <h2 className="text-lg font-semibold mb-5">
+          <h2 className="mb-5 text-lg font-semibold">
             Subject Information
           </h2>
 
           <div className="space-y-3">
 
             <p>
-              <strong>Faculty:</strong>{" "}
-              {subject.faculty}
+              <strong>Faculty:</strong> {subject.faculty}
             </p>
 
             <p>
-              <strong>Semester:</strong>{" "}
-              {subject.semester}
+              <strong>Semester:</strong> {subject.semester}
             </p>
 
             <p>
-              <strong>Credits:</strong>{" "}
-              {subject.credits}
+              <strong>Credits:</strong> {subject.credits}
             </p>
 
           </div>
 
         </div>
 
-        {/* Modules */}
-
         <div className="card p-6">
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
 
             <h2 className="text-lg font-semibold">
               Modules
             </h2>
 
             <button
-              className="btn-primary"
               onClick={() => setShowCreateModal(true)}
+              className="btn-primary"
             >
               + Add Module
             </button>
@@ -162,10 +149,14 @@ export default function SubjectPage() {
 
       {showCreateModal && (
         <CreateModuleModal
-          subjectId={subjectId}
-          onClose={() => setShowCreateModal(false)}
-          onCreated={loadModules}
-        />
+        subjectId={subject.id}
+        studentId={subject.studentId}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={async () => {
+          await loadModules();
+          setShowCreateModal(false);
+        }}
+      />
       )}
     </>
   );

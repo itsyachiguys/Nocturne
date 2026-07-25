@@ -14,12 +14,15 @@ export default function NewSubjectPage() {
   const user = getAuth().currentUser;
 
   if (!user) {
-    return null;
+    return <div>Loading...</div>;
   }
 
-  async function handleCreate(
-    data: CreateSubjectData
-  ) {
+  const uid = user.uid;
+
+  async function handleCreate(data: CreateSubjectData) {
+    console.log("UID:", uid);
+    console.log("Creating subject:", data);
+
     await SubjectService.create(data);
 
     router.push("/dashboard/subjects");
@@ -34,7 +37,7 @@ export default function NewSubjectPage() {
 
       <div className="max-w-xl">
         <SubjectForm
-          studentId={user.uid}
+          studentId={uid}
           onSubmit={handleCreate}
         />
       </div>
