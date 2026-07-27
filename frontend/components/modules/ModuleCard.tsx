@@ -11,7 +11,7 @@ export default function ModuleCard({
   module,
 }: Props) {
   return (
-    <Link href={`/dashboard/modules/${module.id}`}>
+    <Link href={`/subjects/${module.subjectId}/modules/${module.id}`}>
       <div className="border rounded-xl p-4 hover:shadow-lg hover:border-primary transition-all cursor-pointer">
 
         <div className="flex justify-between items-start">

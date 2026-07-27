@@ -20,7 +20,7 @@ export default function ModuleList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
 
       {modules.map((module) => (
         <ModuleCard
