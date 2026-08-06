@@ -3,19 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+import { Module } from "@/types/module";
 import { ModuleService } from "@/services/module.service";
 
-import { Module } from "@/types/module";
+import NotesHeader from "@/components/notes/NotesHeader";
+import NotesToolbar from "@/components/notes/NotesToolbar";
+import NotesEditor from "@/components/notes/NotesEditor";
+import AISidebar from "@/components/notes/AISidebar";
 
-import ModuleHeader from "@/components/modules/ModuleHeader";
-import ModuleStats from "@/components/modules/ModuleStats";
-import ModuleQuickActions from "@/components/modules/ModuleQuickActions";
-import StudyProgress from "@/components/modules/StudyProgress";
-
-export default function ModulePage() {
+export default function NotesPage() {
   const params = useParams();
 
-  const subjectId = params.subjectId as string;
   const unitId = params.unitId as string;
 
   const [module, setModule] = useState<Module | null>(null);
@@ -37,7 +35,7 @@ export default function ModulePage() {
   if (loading) {
     return (
       <div className="p-8">
-        Loading module...
+        Loading notes...
       </div>
     );
   }
@@ -51,20 +49,27 @@ export default function ModulePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      <ModuleHeader module={module} />
+      <NotesHeader title={module.name} />
 
-      <ModuleStats module={module} />
+      <NotesToolbar />
 
-      <StudyProgress
-        progress={module.progress}
-      />
+      <div className="grid gap-6 lg:grid-cols-4">
 
-      <ModuleQuickActions
-        subjectId={subjectId}
-        moduleId={unitId}
-      />
+        <div className="lg:col-span-3">
+        <NotesEditor
+            studentId={module.studentId}
+            subjectId={module.subjectId}
+            moduleId={module.id}
+        />
+        </div>
+
+        <div>
+          <AISidebar />
+        </div>
+
+      </div>
 
     </div>
   );

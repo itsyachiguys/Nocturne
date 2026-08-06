@@ -1,11 +1,9 @@
 import {
     addDoc,
     collection,
-    deleteDoc,
     doc,
     getDoc,
     getDocs,
-    orderBy,
     query,
     serverTimestamp,
     updateDoc,
@@ -13,7 +11,11 @@ import {
   } from "firebase/firestore";
   
   import { db } from "@/lib/firebase";
-  import { Note, CreateNoteData } from "@/types/note";
+  
+  import {
+    Note,
+    CreateNoteData,
+  } from "@/types/note";
   
   const COLLECTION = "notes";
   
@@ -28,25 +30,32 @@ import {
       return ref.id;
     },
   
-    async getByModule(moduleId: string): Promise<Note[]> {
+    async getByModule(moduleId: string): Promise<Note | null> {
       const q = query(
         collection(db, COLLECTION),
-        where("moduleId", "==", moduleId),
-        orderBy("createdAt", "desc")
+        where("moduleId", "==", moduleId)
       );
   
       const snapshot = await getDocs(q);
   
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Note[];
+      if (snapshot.empty) {
+        return null;
+      }
+  
+      const first = snapshot.docs[0];
+  
+      return {
+        id: first.id,
+        ...first.data(),
+      } as Note;
     },
   
     async get(noteId: string): Promise<Note | null> {
       const snapshot = await getDoc(doc(db, COLLECTION, noteId));
   
-      if (!snapshot.exists()) return null;
+      if (!snapshot.exists()) {
+        return null;
+      }
   
       return {
         id: snapshot.id,
@@ -56,15 +65,11 @@ import {
   
     async update(
       noteId: string,
-      data: Partial<CreateNoteData>
+      content: string
     ): Promise<void> {
       await updateDoc(doc(db, COLLECTION, noteId), {
-        ...data,
+        content,
         updatedAt: serverTimestamp(),
       });
-    },
-  
-    async delete(noteId: string): Promise<void> {
-      await deleteDoc(doc(db, COLLECTION, noteId));
     },
   };
