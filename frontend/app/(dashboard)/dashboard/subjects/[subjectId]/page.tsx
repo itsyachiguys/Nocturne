@@ -70,7 +70,10 @@ export default function SubjectPage() {
 
   console.log("Logged-in UID:", auth.currentUser?.uid);
   console.log("Subject studentId:", subject.studentId);
-  console.log("Match:", auth.currentUser?.uid === subject.studentId);
+  console.log(
+    "Match:",
+    auth.currentUser?.uid === subject.studentId
+  );
 
   return (
     <>
@@ -84,6 +87,7 @@ export default function SubjectPage() {
         <div className="grid gap-4 md:grid-cols-2">
 
           <div className="card p-6">
+
             <p className="text-sm text-muted-foreground">
               Progress
             </p>
@@ -91,9 +95,11 @@ export default function SubjectPage() {
             <h2 className="mt-2 text-3xl font-bold">
               {subject.progress ?? 0}%
             </h2>
+
           </div>
 
           <div className="card p-6">
+
             <p className="text-sm text-muted-foreground">
               Attendance
             </p>
@@ -101,6 +107,7 @@ export default function SubjectPage() {
             <h2 className="mt-2 text-3xl font-bold">
               {subject.attendance ?? 0}%
             </h2>
+
           </div>
 
         </div>
@@ -114,15 +121,18 @@ export default function SubjectPage() {
           <div className="space-y-3">
 
             <p>
-              <strong>Faculty:</strong> {subject.faculty}
+              <strong>Faculty:</strong>{" "}
+              {subject.faculty}
             </p>
 
             <p>
-              <strong>Semester:</strong> {subject.semester}
+              <strong>Semester:</strong>{" "}
+              {subject.semester}
             </p>
 
             <p>
-              <strong>Credits:</strong> {subject.credits}
+              <strong>Credits:</strong>{" "}
+              {subject.credits}
             </p>
 
           </div>
@@ -138,7 +148,9 @@ export default function SubjectPage() {
             </h2>
 
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() =>
+                setShowCreateModal(true)
+              }
               className="btn-primary"
             >
               + Add Module
@@ -146,7 +158,10 @@ export default function SubjectPage() {
 
           </div>
 
-          <ModuleList modules={modules} />
+          <ModuleList
+            modules={modules}
+            onRefresh={loadModules}
+          />
 
         </div>
 
@@ -154,14 +169,16 @@ export default function SubjectPage() {
 
       {showCreateModal && (
         <CreateModuleModal
-        subjectId={subject.id}
-        studentId={subject.studentId}
-        onClose={() => setShowCreateModal(false)}
-        onCreated={async () => {
-          await loadModules();
-          setShowCreateModal(false);
-        }}
-      />
+          subjectId={subject.id}
+          studentId={subject.studentId}
+          onClose={() =>
+            setShowCreateModal(false)
+          }
+          onCreated={async () => {
+            await loadModules();
+            setShowCreateModal(false);
+          }}
+        />
       )}
     </>
   );

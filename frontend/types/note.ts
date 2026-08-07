@@ -1,17 +1,34 @@
 import { Timestamp } from "firebase/firestore";
 
+export type NoteCategory =
+  | "Academic"
+  | "Personal"
+  | "Placement"
+  | "Research"
+  | "Other";
+
 export interface Note {
   id: string;
 
   studentId: string;
 
-  subjectId: string;
-
-  moduleId: string;
-
   title: string;
 
   content: string;
+
+  category: NoteCategory;
+
+  subjectId?: string;
+
+  moduleId?: string;
+
+  tags: string[];
+
+  color: string;
+
+  pinned: boolean;
+
+  archived: boolean;
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -20,11 +37,21 @@ export interface Note {
 export interface CreateNoteData {
   studentId: string;
 
-  subjectId: string;
-
-  moduleId: string;
-
   title: string;
 
   content: string;
+
+  category: NoteCategory;
+
+  subjectId?: string;
+
+  moduleId?: string;
+
+  tags?: string[];
+
+  color?: string;
+
+  pinned?: boolean;
+
+  archived?: boolean;
 }

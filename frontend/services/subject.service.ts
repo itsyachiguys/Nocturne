@@ -38,6 +38,10 @@ export const SubjectService = {
     return ref.id;
   },
 
+  /**
+   * Returns all subjects belonging to a student.
+   * Kept for backwards compatibility.
+   */
   async getAll(studentId: string) {
     const q = query(
       collection(db, COLLECTION),
@@ -50,6 +54,13 @@ export const SubjectService = {
       id: doc.id,
       ...doc.data(),
     })) as Subject[];
+  },
+
+  /**
+   * Alias used by the new Notes architecture.
+   */
+  async getByStudent(studentId: string) {
+    return this.getAll(studentId);
   },
 
   async get(subjectId: string) {

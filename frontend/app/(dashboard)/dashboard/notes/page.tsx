@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
 
 import { PageHeader } from "@/components/PageHeader";
 
@@ -9,31 +10,69 @@ import CreateNoteModal from "@/components/notes/CreateNoteModal";
 
 import { Note } from "@/types/note";
 
-export default function NotesPage() {
+import { NoteService } from "@/services/note.service";
 
-  const [notes] = useState<Note[]>([]);
+export default function NotesPage() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  async function loadNotes() {
+    if (!auth.currentUser) return;
+
+    const data = await NoteService.getByStudent(
+      auth.currentUser.uid
+    );
+
+    setNotes(data);
+  }
+
+  useEffect(() => {
+    async function fetchNotes() {
+      try {
+        await loadNotes();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNotes();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        Loading notes...
+      </div>
+    );
+  }
 
   return (
     <>
       <PageHeader
         title="Notes"
-        subtitle="Manage your study notes"
+        subtitle="Manage all your study notes"
       />
 
       <div className="card p-6">
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex items-center justify-between">
 
-          <h2 className="text-xl font-semibold">
-            Notes
-          </h2>
+          <div>
+
+            <h2 className="text-xl font-semibold">
+              My Notes
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              {notes.length} note{notes.length !== 1 ? "s" : ""}
+            </p>
+
+          </div>
 
           <button
             className="btn-primary"
-            onClick={() =>
-              setShowModal(true)
-            }
+            onClick={() => setShowModal(true)}
           >
             + New Note
           </button>
@@ -46,14 +85,13 @@ export default function NotesPage() {
 
       {showModal && (
         <CreateNoteModal
-          moduleId=""
-          onClose={() =>
-            setShowModal(false)
-          }
-          onCreated={() => {}}
+          onClose={() => setShowModal(false)}
+          onCreated={async () => {
+            await loadNotes();
+            setShowModal(false);
+          }}
         />
       )}
-
     </>
   );
 }
