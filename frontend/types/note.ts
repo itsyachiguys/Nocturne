@@ -13,14 +13,15 @@ export interface Note {
   studentId: string;
 
   title: string;
-
   content: string;
 
   category: NoteCategory;
 
   subjectId?: string;
+  subjectName?: string;
 
   moduleId?: string;
+  moduleName?: string;
 
   tags: string[];
 
@@ -38,14 +39,15 @@ export interface CreateNoteData {
   studentId: string;
 
   title: string;
-
   content: string;
 
   category: NoteCategory;
 
   subjectId?: string;
+  subjectName?: string;
 
   moduleId?: string;
+  moduleName?: string;
 
   tags?: string[];
 

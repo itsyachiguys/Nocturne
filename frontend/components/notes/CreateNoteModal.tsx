@@ -17,6 +17,15 @@ interface Props {
   onCreated: () => Promise<void>;
 }
 
+const colors = [
+  "#7C3AED",
+  "#2563EB",
+  "#059669",
+  "#EA580C",
+  "#DB2777",
+  "#DC2626",
+];
+
 export default function CreateNoteModal({
   onClose,
   onCreated,
@@ -27,22 +36,23 @@ export default function CreateNoteModal({
   const [modules, setModules] = useState<Module[]>([]);
 
   const [title, setTitle] = useState("");
-
   const [category, setCategory] =
     useState<NoteCategory>("Academic");
 
   const [subjectId, setSubjectId] = useState("");
-
   const [moduleId, setModuleId] = useState("");
+
+  const [tags, setTags] = useState("");
+  const [color, setColor] = useState("#7C3AED");
+  const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
     async function loadSubjects() {
       if (!auth.currentUser) return;
 
-      const data =
-        await SubjectService.getByStudent(
-          auth.currentUser.uid
-        );
+      const data = await SubjectService.getByStudent(
+        auth.currentUser.uid
+      );
 
       setSubjects(data);
     }
@@ -54,13 +64,13 @@ export default function CreateNoteModal({
     async function loadModules() {
       if (!subjectId) {
         setModules([]);
+        setModuleId("");
         return;
       }
 
-      const data =
-        await ModuleService.getBySubject(
-          subjectId
-        );
+      const data = await ModuleService.getBySubject(
+        subjectId
+      );
 
       setModules(data);
     }
@@ -73,17 +83,31 @@ export default function CreateNoteModal({
   ) {
     e.preventDefault();
 
-    if (!auth.currentUser) {
-      alert("Please login again.");
+    if (!auth.currentUser) return;
+
+    if (!title.trim()) {
+      alert("Please enter a title.");
       return;
     }
 
-    if (!title.trim()) {
+    if (
+      category === "Academic" &&
+      !subjectId
+    ) {
+      alert("Please select a subject.");
       return;
     }
 
     try {
       setLoading(true);
+
+      const subject = subjects.find(
+        (s) => s.id === subjectId
+      );
+
+      const module = modules.find(
+        (m) => m.id === moduleId
+      );
 
       await NoteService.create({
         studentId: auth.currentUser.uid,
@@ -94,28 +118,26 @@ export default function CreateNoteModal({
 
         category,
 
-        subjectId:
-          category === "Academic"
-            ? subjectId || undefined
-            : undefined,
+        subjectId: subjectId || undefined,
+        subjectName: subject?.name,
 
-        moduleId:
-          category === "Academic"
-            ? moduleId || undefined
-            : undefined,
+        moduleId: moduleId || undefined,
+        moduleName: module?.name,
 
-        tags: [],
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
 
-        pinned: false,
-
+        pinned,
         archived: false,
-
-        color: "#7C3AED",
+        color,
       });
 
       await onCreated();
 
       onClose();
+
     } catch (error) {
       console.error(error);
       alert("Failed to create note.");
@@ -139,7 +161,6 @@ export default function CreateNoteModal({
         >
 
           <div>
-
             <label className="mb-2 block text-sm font-medium">
               Category
             </label>
@@ -159,11 +180,9 @@ export default function CreateNoteModal({
               <option>Research</option>
               <option>Other</option>
             </select>
-
           </div>
 
           <div>
-
             <label className="mb-2 block text-sm font-medium">
               Title
             </label>
@@ -173,17 +192,14 @@ export default function CreateNoteModal({
               onChange={(e) =>
                 setTitle(e.target.value)
               }
-              placeholder="Lecture 3 Notes"
+              placeholder="Lecture 5 Notes"
               className="w-full rounded-xl border px-4 py-3"
             />
-
           </div>
 
           {category === "Academic" && (
             <>
-
               <div>
-
                 <label className="mb-2 block text-sm font-medium">
                   Subject
                 </label>
@@ -207,13 +223,10 @@ export default function CreateNoteModal({
                       {subject.name}
                     </option>
                   ))}
-
                 </select>
-
               </div>
 
               <div>
-
                 <label className="mb-2 block text-sm font-medium">
                   Module
                 </label>
@@ -237,13 +250,65 @@ export default function CreateNoteModal({
                       {module.name}
                     </option>
                   ))}
-
                 </select>
-
               </div>
-
             </>
           )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Tags
+            </label>
+
+            <input
+              value={tags}
+              onChange={(e) =>
+                setTags(e.target.value)
+              }
+              placeholder="exam, regression, important"
+              className="w-full rounded-xl border px-4 py-3"
+            />
+          </div>
+
+          <div>
+            <label className="mb-3 block text-sm font-medium">
+              Color
+            </label>
+
+            <div className="flex gap-3">
+
+              {colors.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setColor(item)}
+                  className={`h-8 w-8 rounded-full border-2 ${
+                    color === item
+                      ? "border-black"
+                      : "border-transparent"
+                  }`}
+                  style={{
+                    backgroundColor: item,
+                  }}
+                />
+              ))}
+
+            </div>
+          </div>
+
+          <label className="flex items-center gap-3">
+
+            <input
+              type="checkbox"
+              checked={pinned}
+              onChange={(e) =>
+                setPinned(e.target.checked)
+              }
+            />
+
+            <span>Pin this note</span>
+
+          </label>
 
           <div className="flex justify-end gap-3">
 
@@ -256,7 +321,6 @@ export default function CreateNoteModal({
             </button>
 
             <button
-              type="submit"
               disabled={loading}
               className="rounded-xl bg-violet-600 px-6 py-3 font-medium text-white"
             >
