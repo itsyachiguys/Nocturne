@@ -20,17 +20,13 @@ export default function AttendanceForm({
   const [date, setDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [status, setStatus] = useState<
-    "present" | "absent"
-  >("present");
+  const [status, setStatus] = useState<"present" | "absent">(
+    "present"
+  );
 
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(
-    null
-  );
-  const [error, setError] = useState<string | null>(
-    null
-  );
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -57,18 +53,19 @@ export default function AttendanceForm({
         subjectId,
         date,
         status,
+        source:"self",
       });
 
-      setMessage(
-        "Attendance saved successfully."
-      );
+      setMessage("Attendance saved successfully.");
+
+      // Reset only the status.
+      // Subject and date stay selected so multiple
+      // lectures can be entered quickly.
+      setStatus("present");
 
       onSaved?.();
     } catch (error) {
-      console.error(
-        "Failed to save attendance:",
-        error
-      );
+      console.error("Failed to save attendance:", error);
 
       setError(
         "Failed to save attendance. Please try again."
@@ -86,14 +83,12 @@ export default function AttendanceForm({
         </h3>
 
         <p className="mt-1 text-sm text-ink-secondary">
-          Record whether you attended a class.
+          Record each lecture separately. Multiple lectures can
+          be recorded on the same day.
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Subject */}
         <div>
           <label
@@ -106,20 +101,17 @@ export default function AttendanceForm({
           <select
             id="attendance-subject"
             value={subjectId}
-            onChange={(event) =>
-              setSubjectId(event.target.value)
-            }
+            onChange={(event) => {
+              setSubjectId(event.target.value);
+              setError(null);
+              setMessage(null);
+            }}
             className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-lavender-dark dark:border-line-dark dark:bg-zinc-900"
           >
-            <option value="">
-              Select a subject
-            </option>
+            <option value="">Select a subject</option>
 
             {subjects.map((subject) => (
-              <option
-                key={subject.id}
-                value={subject.id}
-              >
+              <option key={subject.id} value={subject.id}>
                 {subject.name}
               </option>
             ))}
@@ -139,25 +131,23 @@ export default function AttendanceForm({
             id="attendance-date"
             type="date"
             value={date}
-            onChange={(event) =>
-              setDate(event.target.value)
-            }
+            onChange={(event) => {
+              setDate(event.target.value);
+              setError(null);
+              setMessage(null);
+            }}
             className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-lavender-dark dark:border-line-dark dark:bg-zinc-900"
           />
         </div>
 
         {/* Status */}
         <div>
-          <p className="mb-2 text-sm font-medium">
-            Status
-          </p>
+          <p className="mb-2 text-sm font-medium">Status</p>
 
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() =>
-                setStatus("present")
-              }
+              onClick={() => setStatus("present")}
               className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
                 status === "present"
                   ? "border-mint bg-mint/30"
@@ -169,9 +159,7 @@ export default function AttendanceForm({
 
             <button
               type="button"
-              onClick={() =>
-                setStatus("absent")
-              }
+              onClick={() => setStatus("absent")}
               className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
                 status === "absent"
                   ? "border-coral bg-coral/20"
@@ -202,9 +190,7 @@ export default function AttendanceForm({
           disabled={saving || subjects.length === 0}
           className="w-full rounded-xl bg-lavender-dark px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saving
-            ? "Saving..."
-            : "Save Attendance"}
+          {saving ? "Saving..." : "Save Attendance"}
         </button>
       </form>
     </div>

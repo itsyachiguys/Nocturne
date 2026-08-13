@@ -1,10 +1,13 @@
 export type AttendanceStatus = "present" | "absent";
 
+export type AttendanceSource = "self";
+
 export interface CreateAttendanceData {
   studentId: string;
   subjectId: string;
   date: string;
   status: AttendanceStatus;
+  source: AttendanceSource;
   note?: string;
 }
 
