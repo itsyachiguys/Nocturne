@@ -124,7 +124,7 @@ export default function SubjectPage() {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:bg-surface-alt"
+            className="flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:bg-surface-alt dark:hover:bg-surface-alt-dark"
           >
             <IconX size={17} />
             Cancel

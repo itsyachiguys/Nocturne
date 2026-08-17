@@ -18,7 +18,7 @@ export default function StudyProgress({
             Study Progress
           </h2>
 
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="mt-1 text-sm text-ink-muted dark:text-ink-muted-dark">
             Overall completion of this module
           </p>
 
@@ -41,7 +41,7 @@ export default function StudyProgress({
 
       </div>
 
-      <div className="mt-4 flex justify-between text-sm text-ink-muted">
+      <div className="mt-4 flex justify-between text-sm text-ink-muted dark:text-ink-muted-dark">
 
         <span>Started</span>
 

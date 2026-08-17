@@ -78,11 +78,11 @@ export default function AttendanceForm({
   return (
     <div className="card p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-ink-primary">
+        <h3 className="text-lg font-semibold text-ink-primary dark:text-ink-primary-dark">
           Mark Attendance
         </h3>
 
-        <p className="mt-1 text-sm text-ink-secondary">
+        <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
           Record each lecture separately. Multiple lectures can
           be recorded on the same day.
         </p>

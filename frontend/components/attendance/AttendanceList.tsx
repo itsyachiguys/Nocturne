@@ -73,11 +73,11 @@ export default function AttendanceList({
   if (attendance.length === 0) {
     return (
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-ink-primary">
+        <h3 className="text-lg font-semibold text-ink-primary dark:text-ink-primary-dark">
           Attendance History
         </h3>
 
-        <p className="mt-2 text-sm text-ink-secondary">
+        <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
           No attendance records have been added yet.
         </p>
       </div>
@@ -91,11 +91,11 @@ export default function AttendanceList({
   return (
     <div className="card p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-ink-primary">
+        <h3 className="text-lg font-semibold text-ink-primary dark:text-ink-primary-dark">
           Attendance History
         </h3>
 
-        <p className="mt-1 text-sm text-ink-secondary">
+        <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
           Edit or remove individual class records.
         </p>
       </div>
@@ -113,11 +113,11 @@ export default function AttendanceList({
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-medium text-ink-primary">
+                  <p className="font-medium text-ink-primary dark:text-ink-primary-dark">
                     {getSubjectName(record.subjectId)}
                   </p>
 
-                  <p className="mt-1 text-sm text-ink-secondary">
+                  <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
                     {record.date}
                   </p>
                 </div>

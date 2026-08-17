@@ -28,16 +28,16 @@ export default function FlashcardsPage() {
               <IconCards size={26} />
             </div>
 
-            <h4 className="mb-2 text-[15px] font-semibold text-ink-primary group-hover:text-lavender-dark transition-colors">
+            <h4 className="mb-2 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark group-hover:text-lavender-dark transition-colors">
               {deck.title}
             </h4>
 
-            <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark">
+            <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
               {deck.subject} • {deck.cardCount} cards
             </p>
 
             <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="text-ink-secondary dark:text-ink-secondary-dark">Mastery</span>
+              <span className="text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">Mastery</span>
               <span className="font-medium text-lavender-dark">{deck.mastery}%</span>
             </div>
 

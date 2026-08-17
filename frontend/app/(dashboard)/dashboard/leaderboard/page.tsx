@@ -14,7 +14,7 @@ export default function LeaderboardPage() {
         {LEADERBOARD.map((entry, idx) => (
           <div
             key={idx}
-            className={`flex items-center gap-5 p-5 transition-all hover:bg-surface-alt dark:hover:bg-surface-alt-dark ${
+            className={`flex items-center gap-5 p-5 transition-all hover:bg-surface-alt dark:hover:bg-surface-alt-dark dark:hover:bg-surface-alt dark:hover:bg-surface-alt-dark-dark ${
               entry.isCurrentUser ? "bg-lavender/10" : ""
             }`}
           >
@@ -42,8 +42,8 @@ export default function LeaderboardPage() {
 
             {/* Points */}
             <div className="text-right">
-              <p className="text-xl font-semibold text-ink-primary">{entry.points}</p>
-              <p className="text-[10px] uppercase tracking-widest text-ink-secondary">pts</p>
+              <p className="text-xl font-semibold text-ink-primary dark:text-ink-primary-dark">{entry.points}</p>
+              <p className="text-[10px] uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">pts</p>
             </div>
           </div>
         ))}

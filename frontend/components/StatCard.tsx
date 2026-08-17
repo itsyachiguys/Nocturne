@@ -33,7 +33,7 @@ export function StatCard({
         <IconComponent size={16} stroke={1.75} />
       </div>
       <p className="font-display text-2xl font-extrabold">{value}</p>
-      <p className="mt-0.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+      <p className="mt-0.5 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
         {label}
       </p>
       {delta && (

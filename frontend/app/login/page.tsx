@@ -96,7 +96,7 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-sm">
           <Link
             href="/"
-            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary hover:text-ink-primary dark:text-ink-secondary-dark dark:hover:text-ink-primary-dark"
+            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink-primary dark:text-ink-primary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark dark:hover:text-ink-primary dark:text-ink-primary-dark-dark"
           >
             <IconArrowLeft size={15} />
             Back to home
@@ -106,7 +106,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
 
-          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark">
+          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
             Log in to pick up your streak where you left off.
           </p>
 
@@ -120,7 +120,7 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-ink-muted dark:text-ink-muted-dark">
+          <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
             or continue with email
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
@@ -153,7 +153,7 @@ export default function LoginPage() {
             />
 
             <div className="flex items-center justify-between text-[13px]">
-              <label className="flex items-center gap-2 text-ink-secondary dark:text-ink-secondary-dark">
+              <label className="flex items-center gap-2 text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-line accent-lavender-dark dark:border-line-dark"
@@ -180,7 +180,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
+          <p className="mt-8 text-center text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
             New to Nocturne?{" "}
             <Link
               href="/signup"

@@ -19,13 +19,13 @@ export default function AnalyticsPage() {
       <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {ANALYTICS_METRICS.map((metric, idx) => (
           <div key={idx} className="card p-6 hover:shadow-soft transition-shadow">
-            <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
+            <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
               {metric.label}
             </p>
-            <p className="mt-3 font-display text-4xl font-bold text-ink-primary">
+            <p className="mt-3 font-display text-4xl font-bold text-ink-primary dark:text-ink-primary-dark">
               {metric.value}
             </p>
-            <p className="mt-2 text-sm text-ink-muted dark:text-ink-muted-dark">
+            <p className="mt-2 text-sm text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
               {metric.note}
             </p>
           </div>
@@ -34,7 +34,7 @@ export default function AnalyticsPage() {
 
       {/* Subject Strength */}
       <div className="card p-6">
-        <h4 className="mb-6 text-[15px] font-semibold text-ink-primary">
+        <h4 className="mb-6 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
           Subject Strength
         </h4>
         
@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
           {SUBJECT_STRENGTH.map((s, idx) => (
             <div key={idx} className="group">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-primary">{s.subject}</span>
+                <span className="font-medium text-ink-primary dark:text-ink-primary-dark">{s.subject}</span>
                 <span className="font-mono text-lavender-dark">{s.score}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark overflow-hidden">

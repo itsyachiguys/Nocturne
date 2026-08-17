@@ -21,7 +21,7 @@ export default function ModuleHeader({
           </h1>
 
           {module.description && (
-            <p className="mt-3 text-ink-muted">
+            <p className="mt-3 text-ink-muted dark:text-ink-muted-dark">
               {module.description}
             </p>
           )}

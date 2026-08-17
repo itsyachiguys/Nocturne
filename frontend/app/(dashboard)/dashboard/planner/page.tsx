@@ -18,7 +18,7 @@ export default function PlannerPage() {
         
         {/* Today's Tasks */}
         <div className="card p-6">
-          <h4 className="mb-6 text-[15px] font-semibold text-ink-primary">Today’s Tasks</h4>
+          <h4 className="mb-6 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">Today’s Tasks</h4>
           
           <div className="space-y-4">
             {PLANNER_TASKS.map((task) => (
@@ -38,7 +38,7 @@ export default function PlannerPage() {
                 
                 <div className={`flex-1 ${task.done ? "opacity-60 line-through" : ""}`}>
                   <p className="text-[15px]">{task.title}</p>
-                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
+                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark mt-0.5">
                     {task.subject} • Due {task.due}
                   </p>
                 </div>
@@ -52,13 +52,13 @@ export default function PlannerPage() {
           
           {/* Weekly Goal */}
           <div className="card p-6">
-            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary">Weekly Goal</h4>
+            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">Weekly Goal</h4>
             
             <div className="flex items-baseline gap-2 mb-4">
               <span className="font-display text-4xl font-bold text-lavender-dark">
                 {WEEKLY_GOAL.completed}
               </span>
-              <span className="text-xl text-ink-secondary">/ {WEEKLY_GOAL.target}</span>
+              <span className="text-xl text-ink-secondary dark:text-ink-secondary-dark">/ {WEEKLY_GOAL.target}</span>
             </div>
 
             <div className="h-2.5 w-full rounded-full bg-surface-alt dark:bg-surface-alt-dark mb-2">
@@ -67,14 +67,14 @@ export default function PlannerPage() {
                 style={{ width: `${goalPct}%` }} 
               />
             </div>
-            <p className="text-xs text-ink-secondary">{goalPct}% completed</p>
+            <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">{goalPct}% completed</p>
           </div>
 
           {/* Pomodoro Timer */}
           <div className="card p-6 text-center">
-            <h4 className="mb-2 text-[15px] font-semibold text-ink-primary">Pomodoro Timer</h4>
+            <h4 className="mb-2 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">Pomodoro Timer</h4>
             <p className="font-display text-6xl font-bold tracking-tighter text-lavender-dark mb-2">25:00</p>
-            <p className="text-sm text-ink-secondary mb-6">Focus Session</p>
+            <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark mb-6">Focus Session</p>
             
             <button className="btn-primary mx-auto flex items-center gap-2 px-8 py-3">
               <IconPlayerPlay size={18} />

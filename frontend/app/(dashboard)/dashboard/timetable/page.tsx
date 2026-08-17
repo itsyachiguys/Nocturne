@@ -18,7 +18,7 @@ export default function TimetablePage() {
           {/* Header */}
           <div></div>
           {WEEK_DAYS.map((day) => (
-            <div key={day} className="pb-4 text-center text-sm font-semibold text-ink-primary">
+            <div key={day} className="pb-4 text-center text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
               {day}
             </div>
           ))}
@@ -26,7 +26,7 @@ export default function TimetablePage() {
           {/* Time Slots */}
           {TIME_SLOTS.map((time) => (
             <Fragment key={time}>
-              <div className="py-4 text-right pr-4 text-sm font-medium text-ink-secondary dark:text-ink-secondary-dark border-r border-line dark:border-line-dark">
+              <div className="py-4 text-right pr-4 text-sm font-medium text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark border-r border-line dark:border-line-dark">
                 {time}
               </div>
 
@@ -37,13 +37,13 @@ export default function TimetablePage() {
                     {slot ? (
                       <div className="h-full rounded-2xl bg-lavender/10 p-3 border border-lavender/30">
                         <p className="font-semibold text-lavender-dark text-[14px]">{slot.subject}</p>
-                        <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-1">
+                        <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark mt-1">
                           {slot.room}
                         </p>
                       </div>
                     ) : (
                       <div className="h-full rounded-2xl border border-dashed border-line dark:border-line-dark flex items-center justify-center">
-                        <span className="text-xs text-ink-muted dark:text-ink-muted-dark">Free</span>
+                        <span className="text-xs text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">Free</span>
                       </div>
                     )}
                   </div>

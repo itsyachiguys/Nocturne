@@ -21,13 +21,13 @@ export default function QuizzesPage() {
         <div className="space-y-6">
           {/* Create Quiz */}
           <div className="card p-6">
-            <h4 className="mb-6 text-[15px] font-semibold text-ink-primary">
+            <h4 className="mb-6 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
               Create a New Quiz
             </h4>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Subject
                 </span>
 
@@ -41,7 +41,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Difficulty
                 </span>
 
@@ -56,7 +56,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Number of Questions
                 </span>
 
@@ -68,7 +68,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Timer (minutes)
                 </span>
 
@@ -88,7 +88,7 @@ export default function QuizzesPage() {
 
           {/* Quiz History */}
           <div className="card p-6">
-            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary">
+            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
               Quiz History
             </h4>
 
@@ -99,11 +99,11 @@ export default function QuizzesPage() {
                   className="flex items-center justify-between py-4"
                 >
                   <div>
-                    <p className="font-medium text-ink-primary">
+                    <p className="font-medium text-ink-primary dark:text-ink-primary-dark">
                       {quiz.title}
                     </p>
 
-                    <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                    <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                       {quiz.subject} • {quiz.date}
                     </p>
                   </div>
@@ -123,7 +123,7 @@ export default function QuizzesPage() {
 
         {/* Weak Topics */}
         <div className="card h-fit p-6">
-          <h4 className="mb-5 flex items-center gap-2 text-[15px] font-semibold text-ink-primary">
+          <h4 className="mb-5 flex items-center gap-2 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
             <IconAlertTriangle
               size={18}
               className="text-pastel-orange"
@@ -142,7 +142,7 @@ export default function QuizzesPage() {
             ))}
           </div>
 
-          <p className="mt-6 text-xs leading-relaxed text-ink-secondary dark:text-ink-secondary-dark">
+          <p className="mt-6 text-xs leading-relaxed text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
             Future quizzes will be weighted toward these topics until your
             mastery improves.
           </p>

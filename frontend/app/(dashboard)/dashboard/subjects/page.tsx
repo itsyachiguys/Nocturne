@@ -61,7 +61,7 @@ export default function SubjectsPage() {
             No subjects yet
           </h2>
 
-          <p className="mt-2 text-ink-secondary">
+          <p className="mt-2 text-ink-secondary dark:text-ink-secondary-dark">
             Create your first subject to get started.
           </p>
         </div>

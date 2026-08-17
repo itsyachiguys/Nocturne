@@ -16,7 +16,7 @@ export default function ModuleStats({
 
       <div className="card rounded-2xl p-6">
 
-        <p className="text-sm text-ink-muted">
+        <p className="text-sm text-ink-muted dark:text-ink-muted-dark">
           Progress
         </p>
 
@@ -30,7 +30,7 @@ export default function ModuleStats({
 
       <div className="card rounded-2xl p-6">
 
-        <p className="text-sm text-ink-muted">
+        <p className="text-sm text-ink-muted dark:text-ink-muted-dark">
           Module Order
         </p>
 
@@ -44,7 +44,7 @@ export default function ModuleStats({
 
       <div className="card rounded-2xl p-6">
 
-        <p className="text-sm text-ink-muted">
+        <p className="text-sm text-ink-muted dark:text-ink-muted-dark">
           Status
         </p>
 
@@ -58,7 +58,7 @@ export default function ModuleStats({
 
       <div className="card rounded-2xl p-6">
 
-        <p className="text-sm text-ink-muted">
+        <p className="text-sm text-ink-muted dark:text-ink-muted-dark">
           Last Updated
         </p>
 

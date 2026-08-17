@@ -21,7 +21,7 @@ export function PageHeader({
       <div>
         <h2 className="text-[22px]">{title}</h2>
         {subtitle && (
-          <p className="text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
+          <p className="text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
             {subtitle}
           </p>
         )}

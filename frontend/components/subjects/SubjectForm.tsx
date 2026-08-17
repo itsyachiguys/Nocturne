@@ -118,7 +118,7 @@ export default function SubjectForm({
       <div>
         <label
           htmlFor="subject-name"
-          className="mb-2 block text-sm font-semibold text-ink-primary"
+          className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
         >
           Subject Name
         </label>
@@ -137,7 +137,7 @@ export default function SubjectForm({
       <div>
         <label
           htmlFor="subject-code"
-          className="mb-2 block text-sm font-semibold text-ink-primary"
+          className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
         >
           Subject Code
         </label>
@@ -157,7 +157,7 @@ export default function SubjectForm({
         <div>
           <label
             htmlFor="subject-semester"
-            className="mb-2 block text-sm font-semibold text-ink-primary"
+            className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
           >
             Semester
           </label>
@@ -179,7 +179,7 @@ export default function SubjectForm({
         <div>
           <label
             htmlFor="subject-credits"
-            className="mb-2 block text-sm font-semibold text-ink-primary"
+            className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
           >
             Credits
           </label>
@@ -203,7 +203,7 @@ export default function SubjectForm({
       <div>
         <label
           htmlFor="subject-faculty"
-          className="mb-2 block text-sm font-semibold text-ink-primary"
+          className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
         >
           Faculty
         </label>
@@ -221,7 +221,7 @@ export default function SubjectForm({
       <div>
         <label
           htmlFor="subject-color"
-          className="mb-2 block text-sm font-semibold text-ink-primary"
+          className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
         >
           Theme Color
         </label>

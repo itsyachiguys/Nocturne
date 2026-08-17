@@ -153,7 +153,7 @@ export default function AttendancePage() {
             Please log in
           </h2>
 
-          <p className="mt-2 text-sm text-ink-secondary">
+          <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
             You need to be logged in to view attendance.
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function AttendancePage() {
 
         <div className="card p-6">
 
-          <p className="text-xs uppercase tracking-widest text-ink-secondary">
+          <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
             Overall Attendance
           </p>
 
@@ -204,7 +204,7 @@ export default function AttendancePage() {
             {overall}%
           </p>
 
-          <p className="mt-2 text-sm text-ink-secondary">
+          <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
             {attendance.length} total classes
           </p>
 
@@ -214,7 +214,7 @@ export default function AttendancePage() {
 
         <div className="card p-6">
 
-          <p className="text-xs uppercase tracking-widest text-ink-secondary">
+          <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
             At Risk Subjects
           </p>
 
@@ -222,7 +222,7 @@ export default function AttendancePage() {
             {atRiskSubjects}
           </p>
 
-          <p className="mt-2 text-sm text-ink-secondary">
+          <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
             Below 75% attendance
           </p>
 
@@ -232,7 +232,7 @@ export default function AttendancePage() {
 
         <div className="card p-6">
 
-          <p className="text-xs uppercase tracking-widest text-ink-secondary">
+          <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
             Classes Recorded
           </p>
 
@@ -240,7 +240,7 @@ export default function AttendancePage() {
             {attendance.length}
           </p>
 
-          <p className="mt-2 text-sm text-ink-secondary">
+          <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
             Across all subjects
           </p>
 
@@ -271,7 +271,7 @@ export default function AttendancePage() {
         </h3>
 
         {subjectAttendance.length === 0 ? (
-          <p className="text-sm text-ink-secondary">
+          <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
             No subjects found.
           </p>
         ) : (
@@ -291,7 +291,7 @@ export default function AttendancePage() {
                         {record.subject.name}
                       </p>
 
-                      <p className="text-xs text-ink-secondary">
+                      <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                         {record.present}/{record.total} classes attended
                       </p>
 

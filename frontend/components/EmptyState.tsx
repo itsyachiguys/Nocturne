@@ -22,7 +22,7 @@ export function EmptyState({
         <IconComponent size={26} stroke={1.5} />
       </div>
       <h4 className="text-[15px]">{title}</h4>
-      <p className="max-w-xs text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
+      <p className="max-w-xs text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
         {description}
       </p>
       {actionLabel && <button className="btn-primary mt-2">{actionLabel}</button>}

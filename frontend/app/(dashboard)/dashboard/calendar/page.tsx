@@ -14,7 +14,7 @@ export default function CalendarPage() {
           <div>
             <IconCalendar size={48} className="mx-auto mb-6 text-lavender-dark" />
             <h3 className="text-xl font-semibold mb-2">Monthly Calendar View</h3>
-            <p className="text-ink-secondary max-w-md mx-auto">
+            <p className="text-ink-secondary dark:text-ink-secondary-dark max-w-md mx-auto">
               Upcoming deadlines, exams, and events will appear here.
             </p>
           </div>

@@ -51,7 +51,7 @@ export default function UnitForm({
     >
       {/* Unit Title */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-ink-primary">
+        <label className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
           Unit Title
         </label>
 
@@ -66,7 +66,7 @@ export default function UnitForm({
 
       {/* Description */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-ink-primary">
+        <label className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
           Description
         </label>
 
@@ -81,7 +81,7 @@ export default function UnitForm({
 
       {/* Theme Color */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-ink-primary">
+        <label className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
           Theme Color
         </label>
 

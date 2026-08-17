@@ -59,6 +59,7 @@ export default function ProfilePage() {
   const [graduationYear, setGraduationYear] = useState(
     new Date().getFullYear()
   );
+  const [cgpa, setCgpa] = useState(0);
 
   /*
    * Load profile
@@ -93,6 +94,7 @@ export default function ProfilePage() {
         profileData.graduationYear ??
           new Date().getFullYear()
       );
+      setCgpa(profileData.cgpa ?? 0);
     } catch (err) {
       console.error("Failed to load profile:", err);
 
@@ -127,6 +129,7 @@ export default function ProfilePage() {
         branch: branch.trim(),
         semester,
         graduationYear,
+        cgpa,
       });
 
       await loadProfile();
@@ -158,6 +161,7 @@ export default function ProfilePage() {
       profile.graduationYear ??
         new Date().getFullYear()
     );
+    setCgpa(profile.cgpa ?? 0);
 
     setError(null);
     setEditing(false);
@@ -175,7 +179,7 @@ export default function ProfilePage() {
         />
 
         <div className="card p-8">
-          <p className="text-sm text-ink-secondary">
+          <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
             Loading profile...
           </p>
         </div>
@@ -195,7 +199,7 @@ export default function ProfilePage() {
         />
 
         <div className="card p-8">
-          <p className="text-sm text-ink-secondary">
+          <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
             Please log in to view your profile.
           </p>
         </div>
@@ -215,7 +219,7 @@ export default function ProfilePage() {
         />
 
         <div className="card p-8">
-          <p className="text-sm text-ink-secondary">
+          <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
             Profile information could not be found.
           </p>
         </div>
@@ -272,7 +276,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="profile-name"
-                  className="mb-2 block text-sm font-semibold text-ink-primary"
+                  className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                 >
                   Full Name
                 </label>
@@ -293,7 +297,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="profile-email"
-                  className="mb-2 block text-sm font-semibold text-ink-primary"
+                  className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                 >
                   Email
                 </label>
@@ -302,10 +306,11 @@ export default function ProfilePage() {
                   id="profile-email"
                   value={displayEmail}
                   disabled
-                  className="w-full cursor-not-allowed rounded-xl border border-line bg-surface-alt px-4 py-3 text-ink-secondary outline-none"
+                  className="w-full cursor-not-allowed rounded-xl border border-line bg-surface-alt px-4 py-3 text-ink-secondary outline-none
+dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark:text-ink-secondary-dark outline-none"
                 />
 
-                <p className="mt-2 text-xs text-ink-secondary">
+                <p className="mt-2 text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Email is managed by your authentication
                   provider.
                 </p>
@@ -315,7 +320,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="profile-university"
-                  className="mb-2 block text-sm font-semibold text-ink-primary"
+                  className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                 >
                   University
                 </label>
@@ -335,7 +340,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="profile-degree"
-                  className="mb-2 block text-sm font-semibold text-ink-primary"
+                  className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                 >
                   Degree
                 </label>
@@ -355,7 +360,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="profile-branch"
-                  className="mb-2 block text-sm font-semibold text-ink-primary"
+                  className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                 >
                   Branch
                 </label>
@@ -371,13 +376,14 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {/* Semester + Graduation */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Semester + Graduation + CGPA */}
+              <div className="grid gap-4 sm:grid-cols-3">
 
+                {/* Semester */}
                 <div>
                   <label
                     htmlFor="profile-semester"
-                    className="mb-2 block text-sm font-semibold text-ink-primary"
+                    className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                   >
                     Current Semester
                   </label>
@@ -397,10 +403,11 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                {/* Graduation Year */}
                 <div>
                   <label
                     htmlFor="profile-graduation"
-                    className="mb-2 block text-sm font-semibold text-ink-primary"
+                    className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
                   >
                     Graduation Year
                   </label>
@@ -420,6 +427,34 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                {/* CGPA */}
+                <div>
+                  <label
+                    htmlFor="profile-cgpa"
+                    className="mb-2 block text-sm font-semibold text-ink-primary dark:text-ink-primary-dark"
+                  >
+                    Current CGPA
+                  </label>
+
+                  <input
+                    id="profile-cgpa"
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.01}
+                    value={cgpa}
+                    onChange={(e) =>
+                      setCgpa(Number(e.target.value))
+                    }
+                    className="w-full rounded-xl border border-line px-4 py-3 outline-none transition focus:border-lavender-dark"
+                    placeholder="e.g. 9.70"
+                  />
+
+                  <p className="mt-2 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                    Enter your CGPA out of 10.
+                  </p>
+                </div>
+
               </div>
 
               {/* Actions */}
@@ -429,7 +464,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleCancel}
                   disabled={saving}
-                  className="flex items-center gap-2 rounded-xl border border-line px-5 py-3 text-sm font-medium transition hover:bg-surface-alt disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl border border-line px-5 py-3 text-sm font-medium transition hover:bg-surface-alt dark:hover:bg-surface-alt-dark disabled:opacity-50"
                 >
                   <IconX size={17} />
                   Cancel
@@ -484,29 +519,29 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-lavender to-soft-purple shadow-soft">
 
-          {profile.photoURL || user.photoURL ? (
-  <img
-    src={profile.photoURL || user.photoURL || ""}
-    alt=""
-    className="h-full w-full object-cover"
-    onError={(e) => {
-      e.currentTarget.style.display = "none";
-    }}
-  />
-) : (
-  <IconUser
-    size={42}
-    className="text-white"
-  />
-)}
+            {profile.photoURL || user.photoURL ? (
+              <img
+                src={profile.photoURL || user.photoURL || ""}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <IconUser
+                size={42}
+                className="text-white"
+              />
+            )}
 
           </div>
 
-          <h3 className="text-xl font-semibold text-ink-primary">
+          <h3 className="text-xl font-semibold text-ink-primary dark:text-ink-primary-dark">
             {displayName}
           </h3>
 
-          <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
+          <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
             {profile.degree || "Student"}
             {profile.branch
               ? ` • ${profile.branch}`
@@ -572,7 +607,7 @@ export default function ProfilePage() {
           {/* Academic Details */}
           <div className="card p-6">
 
-            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary">
+            <h4 className="mb-5 text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
               Academic Details
             </h4>
 
@@ -580,7 +615,7 @@ export default function ProfilePage() {
 
               {/* University */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   University
                 </p>
 
@@ -592,7 +627,7 @@ export default function ProfilePage() {
 
               {/* Degree */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Degree
                 </p>
 
@@ -604,7 +639,7 @@ export default function ProfilePage() {
 
               {/* Branch */}
               <div>
-                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   <IconSchool size={16} />
                   Branch
                 </p>
@@ -617,7 +652,7 @@ export default function ProfilePage() {
 
               {/* Semester */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Current Semester
                 </p>
 
@@ -629,7 +664,7 @@ export default function ProfilePage() {
 
               {/* Graduation */}
               <div>
-                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   <IconCalendar size={16} />
                   Graduation
                 </p>
@@ -642,7 +677,7 @@ export default function ProfilePage() {
 
               {/* CGPA */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Current CGPA
                 </p>
 
@@ -664,7 +699,7 @@ export default function ProfilePage() {
                 className="text-lavender-dark"
               />
 
-              <h4 className="text-[15px] font-semibold text-ink-primary">
+              <h4 className="text-[15px] font-semibold text-ink-primary dark:text-ink-primary-dark">
                 Account Information
               </h4>
             </div>
@@ -672,7 +707,7 @@ export default function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
 
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Authentication
                 </p>
 
@@ -683,7 +718,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
                   Email
                 </p>
 
