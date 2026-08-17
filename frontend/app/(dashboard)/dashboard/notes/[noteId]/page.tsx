@@ -133,15 +133,6 @@ export default function NotePage() {
   return (
     <div className="space-y-4">
 
-      {/* SINGLE BACK BUTTON */}
-
-      <Link
-        href="/dashboard/notes"
-        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-violet-600 dark:text-zinc-300 dark:hover:text-violet-400"
-      >
-        ← Back to Notes
-      </Link>
-
       {/* NOTE METADATA */}
 
       <div className="flex flex-wrap items-center gap-2">
