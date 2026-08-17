@@ -24,7 +24,7 @@ export default function MaterialsPage() {
           return (
             <div 
               key={file.id} 
-              className="flex items-center gap-5 p-5 hover:bg-surface-alt dark:hover:bg-surface-alt-dark dark:hover:bg-surface-alt dark:hover:bg-surface-alt-dark-dark transition-colors group"
+              className="flex items-center gap-5 p-5 hover:bg-surface-alt dark:hover:bg-surface-alt-dark transition-colors group"
             >
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-lavender/10 text-lavender-dark">
                 <Icon size={24} />
@@ -34,7 +34,7 @@ export default function MaterialsPage() {
                 <p className="font-medium text-ink-primary dark:text-ink-primary-dark truncate group-hover:text-lavender-dark transition-colors">
                   {file.name}
                 </p>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   {file.subject} • {file.size} • Uploaded {file.uploaded}
                 </p>
               </div>

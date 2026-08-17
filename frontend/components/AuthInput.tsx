@@ -31,7 +31,7 @@ export function AuthInput({
     <div>
       <label
         htmlFor={id}
-        className="mb-1.5 block text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark"
+        className="mb-1.5 block text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark"
       >
         {label}
       </label>
@@ -43,13 +43,13 @@ export function AuthInput({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required={required}
-          className="w-full rounded-sm border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary dark:text-ink-primary-dark placeholder:text-ink-muted dark:text-ink-muted-dark focus:outline-none focus:ring-2 focus:ring-lavender/40 dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary dark:text-ink-primary-dark-dark dark:placeholder:text-ink-muted dark:text-ink-muted-dark-dark"
+          className="w-full rounded-sm border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary dark:text-ink-primary-dark placeholder:text-ink-muted dark:text-ink-muted-dark focus:outline-none focus:ring-2 focus:ring-lavender/40 dark:border-line-dark dark:bg-surface-card-dark dark:placeholder:text-ink-muted dark:text-ink-muted-dark"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-muted dark:text-ink-muted-dark hover:text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-muted dark:text-ink-muted-dark-dark"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-muted dark:text-ink-muted-dark hover:text-ink-secondary dark:text-ink-secondary-dark"
             aria-label={visible ? "Hide password" : "Show password"}
           >
             {visible ? <IconEyeOff size={18} /> : <IconEye size={18} />}

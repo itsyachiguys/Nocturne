@@ -38,7 +38,7 @@ export default function PlannerPage() {
                 
                 <div className={`flex-1 ${task.done ? "opacity-60 line-through" : ""}`}>
                   <p className="text-[15px]">{task.title}</p>
-                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark mt-0.5">
+                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
                     {task.subject} • Due {task.due}
                   </p>
                 </div>

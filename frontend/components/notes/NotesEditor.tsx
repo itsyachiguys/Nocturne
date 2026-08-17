@@ -601,7 +601,7 @@ export default function NotesEditor({ note }: Props) {
               "/dashboard/notes"
             )
           }
-          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-violet-600"
+          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-violet-600 dark:text-zinc-300 dark:hover:text-violet-400"
         >
           <span className="text-lg">
             ←
@@ -634,7 +634,7 @@ export default function NotesEditor({ note }: Props) {
       <button
         type="button"
         onClick={handleBack}
-        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-violet-600"
+        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-violet-600 dark:text-zinc-300 dark:hover:text-violet-400"
       >
         <span className="text-lg">
           ←
@@ -670,7 +670,7 @@ export default function NotesEditor({ note }: Props) {
                 }
                 onBlur={flushSave}
                 placeholder="Untitled Note"
-                className="w-full border-none bg-transparent text-3xl font-bold tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300 md:text-4xl"
+                className="w-full border-none bg-transparent text-3xl font-bold tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300 dark:text-white dark:placeholder:text-zinc-600 md:text-4xl"
               />
 
               <div className="mt-4 flex flex-wrap items-center gap-2">

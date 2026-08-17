@@ -71,7 +71,7 @@ export default function OnboardingPage() {
             Welcome to Nocturne 👋
           </h1>
 
-          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark">
             Let's personalize your workspace before you begin.
           </p>
 

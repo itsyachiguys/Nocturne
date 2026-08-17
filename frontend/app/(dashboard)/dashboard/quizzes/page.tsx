@@ -27,7 +27,7 @@ export default function QuizzesPage() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
                   Subject
                 </span>
 
@@ -41,7 +41,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
                   Difficulty
                 </span>
 
@@ -56,7 +56,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
                   Number of Questions
                 </span>
 
@@ -68,7 +68,7 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <span className="text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark">
                   Timer (minutes)
                 </span>
 
@@ -103,7 +103,7 @@ export default function QuizzesPage() {
                       {quiz.title}
                     </p>
 
-                    <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                    <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                       {quiz.subject} • {quiz.date}
                     </p>
                   </div>
@@ -142,7 +142,7 @@ export default function QuizzesPage() {
             ))}
           </div>
 
-          <p className="mt-6 text-xs leading-relaxed text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mt-6 text-xs leading-relaxed text-ink-secondary dark:text-ink-secondary-dark">
             Future quizzes will be weighted toward these topics until your
             mastery improves.
           </p>

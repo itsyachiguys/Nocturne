@@ -91,7 +91,7 @@ export default function SignupPage() {
         <div className="mx-auto w-full max-w-sm">
           <Link
             href="/"
-            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink-primary dark:text-ink-primary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark dark:hover:text-ink-primary dark:text-ink-primary-dark-dark"
+            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink-primary dark:text-ink-primary-dark dark:hover:text-ink-primary"
           >
             <IconArrowLeft size={15} />
             Back to home
@@ -99,7 +99,7 @@ export default function SignupPage() {
 
           <h1 className="mb-2 text-[28px]">Create your account</h1>
 
-          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mb-8 text-[14px] text-ink-secondary dark:text-ink-secondary-dark">
             Set up your workspace and start your first study streak today.
           </p>
 
@@ -113,7 +113,7 @@ export default function SignupPage() {
             Continue with Google
           </button>
 
-          <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+          <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-ink-muted dark:text-ink-muted-dark">
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
             or continue with email
             <div className="h-px flex-1 bg-line dark:bg-line-dark" />
@@ -149,7 +149,7 @@ export default function SignupPage() {
               autoComplete="new-password"
             />
 
-            <label className="flex items-start gap-2.5 text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+            <label className="flex items-start gap-2.5 text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
               <input
                 type="checkbox"
                 required
@@ -168,7 +168,7 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mt-8 text-center text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
             Already have an account?{" "}
             <Link href="/login" className="font-semibold text-lavender-dark">
               Log in

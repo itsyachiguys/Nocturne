@@ -314,7 +314,7 @@ export default function SettingsPage() {
             Appearance
           </h4>
 
-          <p className="mb-3 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mb-3 text-xs text-ink-secondary dark:text-ink-secondary-dark">
             Theme
           </p>
 
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                 className={
                   theme === mode
                     ? "flex-1 rounded-xl border border-lavender-dark bg-lavender/10 px-4 py-3 text-sm font-medium capitalize text-lavender-dark shadow-sm transition-all"
-                    : "flex-1 rounded-xl border border-line px-4 py-3 text-sm font-medium capitalize text-ink-secondary dark:text-ink-secondary-dark transition-all hover:border-lavender/30 dark:border-line-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark"
+                    : "flex-1 rounded-xl border border-line px-4 py-3 text-sm font-medium capitalize text-ink-secondary dark:text-ink-secondary-dark transition-all hover:border-lavender/30 dark:border-line-dark"
                 }
               >
                 {theme === mode && (

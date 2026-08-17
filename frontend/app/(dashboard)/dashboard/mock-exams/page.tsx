@@ -6,7 +6,7 @@ const STATUS_STYLE = {
   "not-started": { 
     label: "Not started", 
     bg: "bg-surface-alt dark:bg-surface-alt-dark", 
-    text: "text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark" 
+    text: "text-ink-secondary dark:text-ink-secondary-dark" 
   },
   "in-progress": { 
     label: "In progress", 
@@ -49,7 +49,7 @@ export default function MockExamsPage() {
                 {exam.title}
               </h4>
 
-              <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+              <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark">
                 {exam.subject} • {exam.questions} questions • {exam.duration}
               </p>
 

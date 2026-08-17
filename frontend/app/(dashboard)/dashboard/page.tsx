@@ -134,7 +134,7 @@ export default function DashboardPage() {
                 <div>
                   <p>{task.title}</p>
 
-                  <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+                  <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark">
                     {task.meta}
                   </p>
                 </div>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                   {entry.name}
                 </p>
 
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   {entry.points}
                 </p>
               </div>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
               <div>
                 <p className="font-semibold">Assignment due tomorrow</p>
 
-                <p className="text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-ink-secondary dark:text-ink-secondary-dark">
                   DSA — Assignment 4
                 </p>
               </div>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
               <div>
                 <p className="font-semibold">AI notes ready</p>
 
-                <p className="text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-ink-secondary dark:text-ink-secondary-dark">
                   Thermodynamics unit 3
                 </p>
               </div>

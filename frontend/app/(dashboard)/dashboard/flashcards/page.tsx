@@ -32,12 +32,12 @@ export default function FlashcardsPage() {
               {deck.title}
             </h4>
 
-            <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+            <p className="mb-6 text-sm text-ink-secondary dark:text-ink-secondary-dark">
               {deck.subject} • {deck.cardCount} cards
             </p>
 
             <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">Mastery</span>
+              <span className="text-ink-secondary dark:text-ink-secondary-dark">Mastery</span>
               <span className="font-medium text-lavender-dark">{deck.mastery}%</span>
             </div>
 

@@ -26,7 +26,7 @@ export function FeatureCard({
         <IconComponent size={20} stroke={1.75} />
       </div>
       <h4 className="mb-1 text-[15px] font-semibold">{title}</h4>
-      <p className="text-[13px] leading-relaxed text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+      <p className="text-[13px] leading-relaxed text-ink-secondary dark:text-ink-secondary-dark">
         {description}
       </p>
     </div>

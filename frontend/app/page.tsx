@@ -30,7 +30,7 @@ export default function LandingPage() {
     <div>
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-12 py-5">
         <Logo />
-        <div className="hidden gap-8 text-sm font-semibold text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark md:flex">
+        <div className="hidden gap-8 text-sm font-semibold text-ink-secondary dark:text-ink-secondary-dark md:flex">
           <a href="#features">Features</a>
           <a href="#why">Why Nocturne</a>
           <a href="#roadmap">Roadmap</a>
@@ -53,7 +53,7 @@ export default function LandingPage() {
             Run your entire academic life from{" "}
             <span className="gradient-text">one calm workspace</span>
           </h1>
-          <p className="mb-8 max-w-md text-[17px] leading-relaxed text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mb-8 max-w-md text-[17px] leading-relaxed text-ink-secondary dark:text-ink-secondary-dark">
             Upload material, generate notes and quizzes, track attendance, and
             stay ahead of every deadline — all guided by AI built for students.
           </p>
@@ -73,7 +73,7 @@ export default function LandingPage() {
             ].map(([num, label]) => (
               <div key={label}>
                 <p className="font-display text-xl font-extrabold">{num}</p>
-                <p className="text-xs text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">{label}</p>
+                <p className="text-xs text-ink-muted dark:text-ink-muted-dark">{label}</p>
               </div>
             ))}
           </div>
@@ -94,7 +94,7 @@ export default function LandingPage() {
               ].map(([num, label]) => (
                 <div key={label} className="rounded-md bg-surface-alt p-4 dark:bg-surface-alt-dark">
                   <p className="font-display text-xl font-extrabold">{num}</p>
-                  <p className="mt-0.5 text-[11px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">{label}</p>
+                  <p className="mt-0.5 text-[11px] text-ink-secondary dark:text-ink-secondary-dark">{label}</p>
                 </div>
               ))}
             </div>
@@ -111,7 +111,7 @@ export default function LandingPage() {
         <div className="mx-auto mb-12 max-w-xl text-center">
           <p className="text-xs font-bold uppercase tracking-wide text-lavender-dark">Features</p>
           <h2 className="my-3 text-3xl">Everything a student needs, built in</h2>
-          <p className="text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="text-ink-secondary dark:text-ink-secondary-dark">
             Ten focused tools that replace a dozen scattered apps.
           </p>
         </div>

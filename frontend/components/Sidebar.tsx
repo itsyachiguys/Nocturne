@@ -95,11 +95,11 @@ export function Sidebar() {
           </div>
 
           <div>
-            <h1 className="font-display text-2xl font-extrabold text-ink-primary dark:text-ink-primary-dark dark:text-ink-primary dark:text-ink-primary-dark-dark">
+            <h1 className="font-display text-2xl font-extrabold text-ink-primary dark:text-ink-primary-dark">
               Nocturne
             </h1>
 
-            <p className="text-xs text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+            <p className="text-xs text-ink-muted dark:text-ink-muted-dark">
               AI Learning Platform
             </p>
           </div>
@@ -111,7 +111,7 @@ export function Sidebar() {
         {NAV_GROUPS.map((group) => (
           <div key={group.label ?? "primary"} className="mb-6">
             {group.label && (
-              <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+              <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-ink-muted dark:text-ink-muted-dark">
                 {group.label}
               </p>
             )}
@@ -129,8 +129,8 @@ export function Sidebar() {
                     className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all ${
                       isActive
                         ? "bg-brand-gradient text-white shadow-soft"
-                        : "text-ink-secondary dark:text-ink-secondary-dark hover:bg-surface-alt dark:hover:bg-surface-alt-dark hover:text-ink-primary dark:text-ink-primary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark dark:hover:bg-surface-alt dark:hover:bg-surface-alt-dark-dark dark:hover:text-white"
-                    }`}
+                        : "text-ink-secondary dark:text-ink-secondary-dark hover:bg-surface-alt dark:hover:bg-surface-alt-dark hover:text-ink-primary dark:hover:text-white"
+                      }`}
                   >
                     <item.icon size={20} stroke={1.8} />
                     <span>{item.label}</span>

@@ -14,7 +14,7 @@ export default function LeaderboardPage() {
         {LEADERBOARD.map((entry, idx) => (
           <div
             key={idx}
-            className={`flex items-center gap-5 p-5 transition-all hover:bg-surface-alt dark:hover:bg-surface-alt-dark dark:hover:bg-surface-alt dark:hover:bg-surface-alt-dark-dark ${
+            className={`flex items-center gap-5 p-5 transition-all hover:bg-surface-alt dark:hover:bg-surface-alt-dark ${
               entry.isCurrentUser ? "bg-lavender/10" : ""
             }`}
           >

@@ -23,7 +23,7 @@ export function Topbar({ studentName, quote }: TopbarProps) {
           Good evening, {studentName}
         </h2>
 
-        <p className="text-[13px] text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+        <p className="text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
           {formatToday()} · &ldquo;{quote}&rdquo;
         </p>
       </div>
@@ -32,7 +32,7 @@ export function Topbar({ studentName, quote }: TopbarProps) {
       <div className="flex items-center gap-4">
 
         {/* Search */}
-        <div className="flex w-60 items-center gap-2 rounded-full bg-surface-alt px-4 py-2.5 text-[13px] text-ink-muted dark:text-ink-muted-dark dark:bg-surface-alt-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+        <div className="flex w-60 items-center gap-2 rounded-full bg-surface-alt px-4 py-2.5 text-[13px] text-ink-muted dark:text-ink-muted-dark dark:bg-surface-alt-dark">
           <IconSearch size={16} />
           <span>Quick search...</span>
         </div>
@@ -40,7 +40,7 @@ export function Topbar({ studentName, quote }: TopbarProps) {
         {/* Notification */}
         <button
           aria-label="Notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full bg-surface-alt text-ink-secondary dark:text-ink-secondary-dark transition hover:scale-105 dark:bg-surface-alt-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full bg-surface-alt text-ink-secondary dark:text-ink-secondary-dark transition hover:scale-105 dark:bg-surface-alt-dark"
         >
           <IconBell size={18} />
 

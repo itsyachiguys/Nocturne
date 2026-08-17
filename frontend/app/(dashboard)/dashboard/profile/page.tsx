@@ -541,7 +541,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
             {displayName}
           </h3>
 
-          <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+          <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
             {profile.degree || "Student"}
             {profile.branch
               ? ` • ${profile.branch}`
@@ -615,7 +615,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* University */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   University
                 </p>
 
@@ -627,7 +627,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* Degree */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Degree
                 </p>
 
@@ -639,7 +639,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* Branch */}
               <div>
-                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   <IconSchool size={16} />
                   Branch
                 </p>
@@ -652,7 +652,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* Semester */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Current Semester
                 </p>
 
@@ -664,7 +664,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* Graduation */}
               <div>
-                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="flex items-center gap-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   <IconCalendar size={16} />
                   Graduation
                 </p>
@@ -677,7 +677,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
 
               {/* CGPA */}
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Current CGPA
                 </p>
 
@@ -707,7 +707,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
             <div className="grid gap-4 sm:grid-cols-2">
 
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Authentication
                 </p>
 
@@ -718,7 +718,7 @@ dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark dark
               </div>
 
               <div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                   Email
                 </p>
 

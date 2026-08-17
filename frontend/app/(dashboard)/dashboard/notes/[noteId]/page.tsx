@@ -18,20 +18,20 @@ export default function NotePage() {
 
   const [note, setNote] = useState<Note | null>(null);
 
-  const [subjectName, setSubjectName] = useState<string | null>(
-    null
-  );
+  const [subjectName, setSubjectName] =
+    useState<string | null>(null);
 
-  const [moduleName, setModuleName] = useState<string | null>(
-    null
-  );
+  const [moduleName, setModuleName] =
+    useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     async function loadNote() {
       try {
-        const data = await NoteService.get(noteId);
+        const data =
+          await NoteService.get(noteId);
 
         if (!data) {
           setNote(null);
@@ -40,15 +40,17 @@ export default function NotePage() {
 
         setNote(data);
 
-        // Load subject information if this is an academic note
         if (data.subjectId) {
           try {
-            const subject = await SubjectService.get(
-              data.subjectId
-            );
+            const subject =
+              await SubjectService.get(
+                data.subjectId
+              );
 
             if (subject) {
-              setSubjectName(subject.name);
+              setSubjectName(
+                subject.name
+              );
             }
           } catch (error) {
             console.error(
@@ -58,15 +60,17 @@ export default function NotePage() {
           }
         }
 
-        // Load module information if the note belongs to a module
         if (data.moduleId) {
           try {
-            const module = await ModuleService.get(
-              data.moduleId
-            );
+            const module =
+              await ModuleService.get(
+                data.moduleId
+              );
 
             if (module) {
-              setModuleName(module.name);
+              setModuleName(
+                module.name
+              );
             }
           } catch (error) {
             console.error(
@@ -76,7 +80,10 @@ export default function NotePage() {
           }
         }
       } catch (error) {
-        console.error("Failed to load note:", error);
+        console.error(
+          "Failed to load note:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -90,7 +97,7 @@ export default function NotePage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Loading note...
         </p>
       </div>
@@ -100,13 +107,15 @@ export default function NotePage() {
   if (!note) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-        <div className="mb-4 text-5xl">📝</div>
+        <div className="mb-4 text-5xl">
+          📝
+        </div>
 
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
           Note not found
         </h1>
 
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           This note may have been deleted or is no longer
           available.
         </p>
@@ -124,52 +133,48 @@ export default function NotePage() {
   return (
     <div className="space-y-4">
 
-      {/* Back navigation */}
+      {/* SINGLE BACK BUTTON */}
 
       <Link
         href="/dashboard/notes"
-        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-violet-600"
+        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-violet-600 dark:text-zinc-300 dark:hover:text-violet-400"
       >
         ← Back to Notes
       </Link>
 
-      {/* Note metadata */}
+      {/* NOTE METADATA */}
 
       <div className="flex flex-wrap items-center gap-2">
 
-        {/* Category */}
-
-        <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700">
+        <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
           {note.category}
         </span>
 
-        {/* Subject */}
-
         {subjectName && (
           <>
-            <span className="text-zinc-300">•</span>
+            <span className="text-zinc-400 dark:text-zinc-500">
+              •
+            </span>
 
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
               📚 {subjectName}
             </span>
           </>
         )}
 
-        {/* Module */}
-
         {moduleName && (
           <>
-            <span className="text-zinc-300">•</span>
+            <span className="text-zinc-400 dark:text-zinc-500">
+              •
+            </span>
 
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
               📖 {moduleName}
             </span>
           </>
         )}
 
       </div>
-
-      {/* Editor */}
 
       <NotesEditor note={note} />
 

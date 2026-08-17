@@ -16,7 +16,7 @@
   }
 
   html.dark body {
-    @apply bg-surface-bg-dark text-ink-primary dark:text-ink-primary-dark-dark;
+    @apply bg-surface-bg-dark text-ink-primary dark:text-ink-primary-dark;
   }
 
   h1,
@@ -30,7 +30,7 @@
   html.dark h2,
   html.dark h3,
   html.dark h4 {
-    @apply text-ink-primary dark:text-ink-primary-dark-dark;
+    @apply text-ink-primary dark:text-ink-primary-dark;
   }
 }
 
@@ -49,7 +49,7 @@
     @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface-card
       px-6 py-3 font-display text-sm font-semibold text-ink-primary dark:text-ink-primary-dark transition-transform
       hover:-translate-y-0.5 active:scale-95
-      dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary dark:text-ink-primary-dark-dark;
+      dark:border-line-dark dark:bg-surface-card-dark  dark:text-ink-primary-dark;
   }
 
   .card {

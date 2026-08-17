@@ -54,7 +54,6 @@ export default function NoteMetadata({
   /*
    * Load subjects
    */
-
   useEffect(() => {
     async function loadSubjects() {
       try {
@@ -77,7 +76,6 @@ export default function NoteMetadata({
   /*
    * Load modules whenever subject changes
    */
-
   useEffect(() => {
     async function loadModules() {
       if (!subjectId) {
@@ -87,9 +85,7 @@ export default function NoteMetadata({
 
       try {
         const data =
-          await ModuleService.getBySubject(
-            subjectId
-          );
+          await ModuleService.getBySubject(subjectId);
 
         setModules(data);
       } catch (error) {
@@ -108,7 +104,6 @@ export default function NoteMetadata({
   /*
    * Save metadata
    */
-
   async function saveMetadata(
     data: Partial<{
       category: NoteCategory;
@@ -121,10 +116,7 @@ export default function NoteMetadata({
     try {
       setSaving(true);
 
-      await NoteService.update(
-        note.id,
-        data
-      );
+      await NoteService.update(note.id, data);
 
       onUpdated?.();
     } catch (error) {
@@ -142,14 +134,11 @@ export default function NoteMetadata({
   /*
    * Category
    */
-
   async function handleCategoryChange(
     value: NoteCategory
   ) {
     setCategory(value);
 
-    // Academic notes may have subject/module.
-    // Personal/etc. notes don't need them.
     if (value !== "Academic") {
       setSubjectId("");
       setModuleId("");
@@ -172,13 +161,10 @@ export default function NoteMetadata({
   /*
    * Subject
    */
-
   async function handleSubjectChange(
     value: string
   ) {
     setSubjectId(value);
-
-    // Changing subject invalidates the old module.
     setModuleId("");
 
     await saveMetadata({
@@ -190,7 +176,6 @@ export default function NoteMetadata({
   /*
    * Module
    */
-
   async function handleModuleChange(
     value: string
   ) {
@@ -204,13 +189,11 @@ export default function NoteMetadata({
   /*
    * Add tag
    */
-
   async function handleAddTag() {
     const tag = tagInput.trim();
 
     if (!tag) return;
 
-    // Prevent duplicates
     if (
       tags.some(
         (existingTag) =>
@@ -235,7 +218,6 @@ export default function NoteMetadata({
   /*
    * Remove tag
    */
-
   async function handleRemoveTag(
     tagToRemove: string
   ) {
@@ -253,7 +235,6 @@ export default function NoteMetadata({
   /*
    * Add tag with Enter
    */
-
   function handleTagKeyDown(
     e: React.KeyboardEvent<HTMLInputElement>
   ) {
@@ -266,7 +247,6 @@ export default function NoteMetadata({
   /*
    * Color
    */
-
   async function handleColorChange(
     value: string
   ) {
@@ -278,35 +258,30 @@ export default function NoteMetadata({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-
+    <div className="rounded-2xl border border-line bg-surface-alt p-5 dark:border-line-dark dark:bg-surface-alt-dark">
       <div className="mb-5 flex items-center justify-between">
-
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900">
+          <h3 className="text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
             Note Organization
           </h3>
 
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-ink-muted dark:text-ink-muted-dark">
             Organize this note by category, subject,
             module and tags.
           </p>
         </div>
 
         {saving && (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-ink-muted dark:text-ink-muted-dark">
             Saving...
           </span>
         )}
-
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-
         {/* Category */}
-
         <div>
-          <label className="mb-2 block text-xs font-medium text-zinc-600">
+          <label className="mb-2 block text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark">
             Category
           </label>
 
@@ -317,13 +292,10 @@ export default function NoteMetadata({
                 e.target.value as NoteCategory
               )
             }
-            className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-500"
+            className="w-full rounded-xl border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary-dark"
           >
             {categories.map((item) => (
-              <option
-                key={item}
-                value={item}
-              >
+              <option key={item} value={item}>
                 {item}
               </option>
             ))}
@@ -331,52 +303,42 @@ export default function NoteMetadata({
         </div>
 
         {/* Color */}
-
         <div>
-          <label className="mb-2 block text-xs font-medium text-zinc-600">
+          <label className="mb-2 block text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark">
             Note Color
           </label>
 
-          <div className="flex items-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-2.5">
-
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-card px-4 py-2.5 dark:border-line-dark dark:bg-surface-card-dark">
             <input
               type="color"
               value={color}
               onChange={(e) =>
-                handleColorChange(
-                  e.target.value
-                )
+                handleColorChange(e.target.value)
               }
               className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
             />
 
-            <span className="text-sm text-zinc-600">
+            <span className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
               {color}
             </span>
-
           </div>
         </div>
 
         {/* Subject */}
-
         {category === "Academic" && (
           <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-600">
+            <label className="mb-2 block text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark">
               Subject
             </label>
 
             <select
               value={subjectId}
               onChange={(e) =>
-                handleSubjectChange(
-                  e.target.value
-                )
+                handleSubjectChange(e.target.value)
               }
-              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-500"
+              className="w-full rounded-xl border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary-dark"
             >
-              <option value="">
-                No Subject
-              </option>
+              <option value="">No Subject</option>
 
               {subjects.map((subject) => (
                 <option
@@ -394,22 +356,19 @@ export default function NoteMetadata({
         )}
 
         {/* Module */}
-
         {category === "Academic" && (
           <div>
-            <label className="mb-2 block text-xs font-medium text-zinc-600">
+            <label className="mb-2 block text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark">
               Module
             </label>
 
             <select
               value={moduleId}
               onChange={(e) =>
-                handleModuleChange(
-                  e.target.value
-                )
+                handleModuleChange(e.target.value)
               }
               disabled={!subjectId}
-              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+              className="w-full rounded-xl border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-ink-muted dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary-dark dark:disabled:bg-surface-alt-dark dark:disabled:text-ink-muted-dark"
             >
               <option value="">
                 {subjectId
@@ -428,19 +387,15 @@ export default function NoteMetadata({
             </select>
           </div>
         )}
-
       </div>
 
       {/* Tags */}
-
       <div className="mt-5">
-
-        <label className="mb-2 block text-xs font-medium text-zinc-600">
+        <label className="mb-2 block text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark">
           Tags
         </label>
 
         <div className="flex gap-2">
-
           <input
             value={tagInput}
             onChange={(e) =>
@@ -448,22 +403,20 @@ export default function NoteMetadata({
             }
             onKeyDown={handleTagKeyDown}
             placeholder="Add a tag..."
-            className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-500"
+            className="flex-1 rounded-xl border border-line bg-surface-card px-4 py-3 text-sm text-ink-primary outline-none transition placeholder:text-ink-muted focus:border-lavender dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-primary-dark dark:placeholder:text-ink-muted-dark"
           />
 
           <button
             type="button"
             onClick={handleAddTag}
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium transition hover:bg-zinc-100"
+            className="rounded-xl border border-line bg-surface-card px-4 py-3 text-sm font-medium text-ink-secondary transition hover:bg-surface-alt dark:border-line-dark dark:bg-surface-card-dark dark:text-ink-secondary-dark dark:hover:bg-surface-alt-dark"
           >
             Add
           </button>
-
         </div>
 
         {tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-
             {tags.map((tag) => (
               <button
                 key={tag}
@@ -471,18 +424,15 @@ export default function NoteMetadata({
                 onClick={() =>
                   handleRemoveTag(tag)
                 }
-                className="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 transition hover:bg-red-100 hover:text-red-600"
+                className="rounded-full bg-lavender/15 px-3 py-1.5 text-xs font-medium text-lavender transition hover:bg-red-100 hover:text-red-600"
                 title="Remove tag"
               >
                 #{tag} ×
               </button>
             ))}
-
           </div>
         )}
-
       </div>
-
     </div>
   );
 }

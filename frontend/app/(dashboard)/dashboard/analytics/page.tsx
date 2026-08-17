@@ -19,13 +19,13 @@ export default function AnalyticsPage() {
       <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {ANALYTICS_METRICS.map((metric, idx) => (
           <div key={idx} className="card p-6 hover:shadow-soft transition-shadow">
-            <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark dark:text-ink-secondary dark:text-ink-secondary-dark-dark">
+            <p className="text-xs uppercase tracking-widest text-ink-secondary dark:text-ink-secondary-dark">
               {metric.label}
             </p>
             <p className="mt-3 font-display text-4xl font-bold text-ink-primary dark:text-ink-primary-dark">
               {metric.value}
             </p>
-            <p className="mt-2 text-sm text-ink-muted dark:text-ink-muted-dark dark:text-ink-muted dark:text-ink-muted-dark-dark">
+            <p className="mt-2 text-sm text-ink-muted dark:text-ink-muted-dark">
               {metric.note}
             </p>
           </div>
