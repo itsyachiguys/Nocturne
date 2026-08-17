@@ -23,6 +23,8 @@ export interface Note {
   moduleId?: string;
   moduleName?: string;
 
+  fileId?: string;
+
   tags: string[];
 
   color: string;
@@ -48,6 +50,8 @@ export interface CreateNoteData {
 
   moduleId?: string;
   moduleName?: string;
+
+  fileId?: string;
 
   tags?: string[];
 

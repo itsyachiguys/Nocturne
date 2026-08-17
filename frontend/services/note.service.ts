@@ -5,45 +5,89 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   serverTimestamp,
   updateDoc,
   where,
-  orderBy,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 
 import {
-  Note,
   CreateNoteData,
+  Note,
 } from "@/types/note";
 
 const COLLECTION = "notes";
 
+function removeUndefined(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const cleaned: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+}
+
 export const NoteService = {
-  async create(data: CreateNoteData): Promise<string> {
+  async create(
+    data: CreateNoteData
+  ): Promise<string> {
     try {
-      const ref = await addDoc(collection(db, COLLECTION), {
-        ...data,
+      const noteData = removeUndefined({
+        studentId: data.studentId,
+        title: data.title,
+        content: data.content,
+        category: data.category,
+
+        subjectId: data.subjectId,
+        subjectName: data.subjectName,
+
+        moduleId: data.moduleId,
+        moduleName: data.moduleName,
+
+        fileId: data.fileId,
 
         tags: data.tags ?? [],
         color: data.color ?? "#7C3AED",
         pinned: data.pinned ?? false,
         archived: data.archived ?? false,
-
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       });
+
+      console.log(
+        "Final Firestore note data:",
+        noteData
+      );
+
+      const ref = await addDoc(
+        collection(db, COLLECTION),
+        {
+          ...noteData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
 
       return ref.id;
     } catch (error) {
-      console.error("Failed to create note:", error);
+      console.error(
+        "Failed to create note:",
+        error
+      );
+
       throw error;
     }
   },
 
-  async get(noteId: string): Promise<Note | null> {
+  async get(
+    noteId: string
+  ): Promise<Note | null> {
     try {
       const snapshot = await getDoc(
         doc(db, COLLECTION, noteId)
@@ -58,12 +102,18 @@ export const NoteService = {
         ...snapshot.data(),
       } as Note;
     } catch (error) {
-      console.error("Failed to fetch note:", error);
+      console.error(
+        "Failed to fetch note:",
+        error
+      );
+
       throw error;
     }
   },
 
-  async getByStudent(studentId: string): Promise<Note[]> {
+  async getByStudent(
+    studentId: string
+  ): Promise<Note[]> {
     try {
       const q = query(
         collection(db, COLLECTION),
@@ -73,17 +123,23 @@ export const NoteService = {
 
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      return snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data(),
       })) as Note[];
     } catch (error) {
-      console.error("Failed to fetch notes:", error);
+      console.error(
+        "Failed to fetch notes:",
+        error
+      );
+
       throw error;
     }
   },
 
-  async getBySubject(subjectId: string): Promise<Note[]> {
+  async getBySubject(
+    subjectId: string
+  ): Promise<Note[]> {
     try {
       const q = query(
         collection(db, COLLECTION),
@@ -93,17 +149,23 @@ export const NoteService = {
 
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      return snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data(),
       })) as Note[];
     } catch (error) {
-      console.error("Failed to fetch subject notes:", error);
+      console.error(
+        "Failed to fetch subject notes:",
+        error
+      );
+
       throw error;
     }
   },
 
-  async getByModule(moduleId: string): Promise<Note[]> {
+  async getByModule(
+    moduleId: string
+  ): Promise<Note[]> {
     try {
       const q = query(
         collection(db, COLLECTION),
@@ -113,12 +175,16 @@ export const NoteService = {
 
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      return snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data(),
       })) as Note[];
     } catch (error) {
-      console.error("Failed to fetch module notes:", error);
+      console.error(
+        "Failed to fetch module notes:",
+        error
+      );
+
       throw error;
     }
   },
@@ -128,15 +194,23 @@ export const NoteService = {
     data: Partial<CreateNoteData>
   ): Promise<void> {
     try {
+      const cleanedData = removeUndefined({
+        ...data,
+      });
+
       await updateDoc(
         doc(db, COLLECTION, noteId),
         {
-          ...data,
+          ...cleanedData,
           updatedAt: serverTimestamp(),
         }
       );
     } catch (error) {
-      console.error("Failed to update note:", error);
+      console.error(
+        "Failed to update note:",
+        error
+      );
+
       throw error;
     }
   },
@@ -154,7 +228,11 @@ export const NoteService = {
         }
       );
     } catch (error) {
-      console.error("Failed to pin note:", error);
+      console.error(
+        "Failed to pin note:",
+        error
+      );
+
       throw error;
     }
   },
@@ -172,18 +250,28 @@ export const NoteService = {
         }
       );
     } catch (error) {
-      console.error("Failed to archive note:", error);
+      console.error(
+        "Failed to archive note:",
+        error
+      );
+
       throw error;
     }
   },
 
-  async delete(noteId: string): Promise<void> {
+  async delete(
+    noteId: string
+  ): Promise<void> {
     try {
       await deleteDoc(
         doc(db, COLLECTION, noteId)
       );
     } catch (error) {
-      console.error("Failed to delete note:", error);
+      console.error(
+        "Failed to delete note:",
+        error
+      );
+
       throw error;
     }
   },

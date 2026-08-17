@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import {
@@ -10,18 +15,35 @@ import {
 
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Image from "@tiptap/extension-image";
+
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
+
 import { Note } from "@/types/note";
 import { Subject } from "@/types/subject";
 import { Module } from "@/types/module";
+
+import { auth, db } from "@/lib/firebase";
 
 import { NoteService } from "@/services/note.service";
 import { SubjectService } from "@/services/subject.service";
@@ -31,20 +53,61 @@ interface Props {
   note: Note;
 }
 
+interface Attachment {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileUrl: string;
+  createdAt?: unknown;
+}
+
+type NoteWithFile = Note & {
+  fileId?: string;
+};
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+const ACCEPTED_FILES = [
+  "image/*",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".ppt",
+  ".pptx",
+  ".xls",
+  ".xlsx",
+  ".txt",
+  ".csv",
+  ".zip",
+].join(",");
+
 export default function NotesEditor({ note }: Props) {
   const router = useRouter();
+  const noteWithFile = note as NoteWithFile;
 
   const [title, setTitle] = useState(note.title);
   const [status, setStatus] = useState("Saved");
-
   const [pinned, setPinned] = useState(note.pinned);
   const [archived, setArchived] = useState(note.archived);
 
-  const [subject, setSubject] =
-    useState<Subject | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [module, setModule] = useState<Module | null>(null);
 
-  const [module, setModule] =
-    useState<Module | null>(null);
+  /*
+   * IMPORTANT:
+   * We now keep an ARRAY of attachments instead of
+   * only one attachment.
+   */
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [uploadIndex, setUploadIndex] = useState(0);
+  const [uploadTotal, setUploadTotal] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const titleRef = useRef(note.title);
   const contentRef = useRef(note.content || "");
@@ -58,9 +121,7 @@ export default function NotesEditor({ note }: Props) {
     newTitle: string,
     newContent: string
   ) {
-    if (savingRef.current) {
-      return;
-    }
+    if (savingRef.current) return;
 
     savingRef.current = true;
     setStatus("Saving...");
@@ -73,11 +134,7 @@ export default function NotesEditor({ note }: Props) {
 
       setStatus("Saved");
     } catch (error) {
-      console.error(
-        "Failed to save note:",
-        error
-      );
-
+      console.error("Failed to save note:", error);
       setStatus("Failed to save");
     } finally {
       savingRef.current = false;
@@ -95,12 +152,511 @@ export default function NotesEditor({ note }: Props) {
     setStatus("Unsaved");
 
     timeoutRef.current = setTimeout(() => {
-      saveNote(
-        newTitle,
-        newContent
-      );
+      saveNote(newTitle, newContent);
     }, 1000);
   }
+
+  /*
+   * ---------------------------------------------------------
+   * CLOUDINARY UPLOAD
+   * ---------------------------------------------------------
+   */
+
+  function uploadToCloudinary(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const cloudName =
+        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+      const uploadPreset =
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+      if (!cloudName) {
+        reject(
+          new Error(
+            "Cloudinary cloud name is missing."
+          )
+        );
+        return;
+      }
+
+      if (!uploadPreset) {
+        reject(
+          new Error(
+            "Cloudinary upload preset is missing."
+          )
+        );
+        return;
+      }
+
+      const formData = new FormData();
+
+      formData.append("file", file);
+      formData.append(
+        "upload_preset",
+        uploadPreset
+      );
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.open(
+        "POST",
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`
+      );
+
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+
+        const progress = Math.round(
+          (event.loaded / event.total) * 100
+        );
+
+        setUploadProgress(progress);
+      };
+
+      xhr.onload = () => {
+        if (
+          xhr.status >= 200 &&
+          xhr.status < 300
+        ) {
+          try {
+            const response = JSON.parse(
+              xhr.responseText
+            );
+
+            if (!response.secure_url) {
+              reject(
+                new Error(
+                  "Cloudinary did not return a secure URL."
+                )
+              );
+              return;
+            }
+
+            resolve(response.secure_url);
+          } catch {
+            reject(
+              new Error(
+                "Invalid response from Cloudinary."
+              )
+            );
+          }
+
+          return;
+        }
+
+        try {
+          const response = JSON.parse(
+            xhr.responseText
+          );
+
+          reject(
+            new Error(
+              response?.error?.message ||
+                "Cloudinary upload failed."
+            )
+          );
+        } catch {
+          reject(
+            new Error(
+              "Cloudinary upload failed."
+            )
+          );
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(
+          new Error(
+            "Network error while uploading to Cloudinary."
+          )
+        );
+      };
+
+      xhr.onabort = () => {
+        reject(
+          new Error(
+            "Cloudinary upload was cancelled."
+          )
+        );
+      };
+
+      xhr.send(formData);
+    });
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * LOAD ALL ATTACHMENTS
+   * ---------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAttachments() {
+      try {
+        const attachmentsMap =
+          new Map<string, Attachment>();
+
+        /*
+         * NEW SYSTEM:
+         * Find every attachment belonging to this note.
+         */
+        const attachmentsQuery = query(
+          collection(db, "uploaded_files"),
+          where("noteId", "==", note.id)
+        );
+
+        const snapshot = await getDocs(
+          attachmentsQuery
+        );
+
+        snapshot.forEach((item) => {
+          const data = item.data();
+
+          attachmentsMap.set(item.id, {
+            id: item.id,
+            fileName:
+              data.fileName || "Attachment",
+            fileType:
+              data.fileType ||
+              "application/octet-stream",
+            fileUrl: data.fileUrl || "",
+            createdAt: data.createdAt,
+          });
+        });
+
+        /*
+         * LEGACY SUPPORT:
+         *
+         * Your previous version stored only fileId
+         * inside the note and did NOT store noteId
+         * inside uploaded_files.
+         *
+         * We load that old file too so it doesn't
+         * suddenly disappear.
+         */
+        if (noteWithFile.fileId) {
+          try {
+            const oldFileSnapshot =
+              await getDoc(
+                doc(
+                  db,
+                  "uploaded_files",
+                  noteWithFile.fileId
+                )
+              );
+
+            if (oldFileSnapshot.exists()) {
+              const data =
+                oldFileSnapshot.data();
+
+              attachmentsMap.set(
+                oldFileSnapshot.id,
+                {
+                  id: oldFileSnapshot.id,
+                  fileName:
+                    data.fileName ||
+                    "Attachment",
+                  fileType:
+                    data.fileType ||
+                    "application/octet-stream",
+                  fileUrl:
+                    data.fileUrl || "",
+                  createdAt:
+                    data.createdAt,
+                }
+              );
+            }
+          } catch (error) {
+            console.error(
+              "Failed to load legacy attachment:",
+              error
+            );
+          }
+        }
+
+        if (cancelled) return;
+
+        const allAttachments =
+          Array.from(
+            attachmentsMap.values()
+          );
+
+        /*
+         * Sort newest first.
+         *
+         * We intentionally sort in JavaScript
+         * so Firestore does NOT require a composite index.
+         */
+        allAttachments.sort((a, b) => {
+          const aTime =
+            a.createdAt &&
+            typeof a.createdAt === "object" &&
+            "seconds" in a.createdAt
+              ? Number(
+                  (
+                    a.createdAt as {
+                      seconds: number;
+                    }
+                  ).seconds
+                )
+              : 0;
+
+          const bTime =
+            b.createdAt &&
+            typeof b.createdAt === "object" &&
+            "seconds" in b.createdAt
+              ? Number(
+                  (
+                    b.createdAt as {
+                      seconds: number;
+                    }
+                  ).seconds
+                )
+              : 0;
+
+          return bTime - aTime;
+        });
+
+        setAttachments(allAttachments);
+      } catch (error) {
+        console.error(
+          "Failed to load attachments:",
+          error
+        );
+      }
+    }
+
+    loadAttachments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [note.id, noteWithFile.fileId]);
+
+  /*
+   * ---------------------------------------------------------
+   * UPLOAD ONE FILE
+   * ---------------------------------------------------------
+   */
+
+  async function uploadSingleFile(
+    file: File
+  ) {
+    if (!auth.currentUser) {
+      throw new Error(
+        "You must be logged in to upload files."
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(
+        `"${file.name}" is larger than 25 MB.`
+      );
+    }
+
+    const secureUrl =
+      await uploadToCloudinary(file);
+
+    /*
+     * IMPORTANT:
+     * We now save noteId with every attachment.
+     */
+    const uploadedFileRef =
+      await addDoc(
+        collection(db, "uploaded_files"),
+        {
+          noteId: note.id,
+
+          unitId: note.moduleId ?? "",
+
+          studentId:
+            auth.currentUser.uid,
+
+          fileName: file.name,
+
+          fileType:
+            file.type ||
+            "application/octet-stream",
+
+          fileUrl: secureUrl,
+
+          createdAt:
+            serverTimestamp(),
+
+          updatedAt:
+            serverTimestamp(),
+        }
+      );
+
+    const uploadedAttachment: Attachment = {
+      id: uploadedFileRef.id,
+      fileName: file.name,
+      fileType:
+        file.type ||
+        "application/octet-stream",
+      fileUrl: secureUrl,
+    };
+
+    /*
+     * Add to the existing list.
+     *
+     * DO NOT replace the old attachments.
+     */
+    setAttachments((previous) => [
+      ...previous,
+      uploadedAttachment,
+    ]);
+
+    /*
+     * If it's an image, also insert it
+     * into the Tiptap editor.
+     */
+    if (
+      file.type.startsWith("image/") &&
+      editor
+    ) {
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: secureUrl,
+          alt: file.name,
+          title: file.name,
+        })
+        .run();
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * MULTIPLE FILE UPLOAD
+   * ---------------------------------------------------------
+   */
+
+  async function handleFileUpload(
+    files: File[]
+  ) {
+    if (!auth.currentUser) {
+      alert(
+        "You must be logged in to upload files."
+      );
+      return;
+    }
+
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadProgress(0);
+    setUploadTotal(files.length);
+    setUploadIndex(0);
+
+    let failedFiles: string[] = [];
+
+    try {
+      /*
+       * Upload sequentially.
+       *
+       * This is safer than firing many Cloudinary
+       * uploads simultaneously and gives us clean
+       * progress like 1/3, 2/3, 3/3.
+       */
+      for (
+        let index = 0;
+        index < files.length;
+        index++
+      ) {
+        const file = files[index];
+
+        setUploadIndex(index + 1);
+        setUploadProgress(0);
+
+        try {
+          await uploadSingleFile(file);
+        } catch (error) {
+          console.error(
+            `Failed to upload ${file.name}:`,
+            error
+          );
+
+          failedFiles.push(
+            file.name
+          );
+        }
+      }
+
+      setUploadProgress(100);
+
+      if (failedFiles.length > 0) {
+        const message =
+          failedFiles.length ===
+          files.length
+            ? "None of the selected files could be uploaded."
+            : `These files could not be uploaded:\n${failedFiles.join(
+                "\n"
+              )}`;
+
+        setUploadError(message);
+        alert(message);
+      } else {
+        setStatus(
+          files.length === 1
+            ? "Attachment saved"
+            : `${files.length} attachments saved`
+        );
+      }
+    } finally {
+      setUploading(false);
+      setUploadIndex(0);
+      setUploadTotal(0);
+
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 700);
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * FILE INPUT
+   * ---------------------------------------------------------
+   */
+
+  function handleFileInputChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const selectedFiles = Array.from(
+      event.target.files || []
+    );
+
+    /*
+     * Reset the input so selecting the exact
+     * same files again still triggers onChange.
+     */
+    event.target.value = "";
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    void handleFileUpload(
+      selectedFiles
+    );
+  }
+
+  function openFilePicker() {
+    if (uploading) return;
+
+    fileInputRef.current?.click();
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * TIPTAP EDITOR
+   * ---------------------------------------------------------
+   */
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -109,6 +665,8 @@ export default function NotesEditor({ note }: Props) {
       StarterKit.configure({
         link: false,
       }),
+
+      Underline,
 
       Link.configure({
         openOnClick: false,
@@ -120,6 +678,16 @@ export default function NotesEditor({ note }: Props) {
             "text-violet-600 underline underline-offset-2",
           target: "_blank",
           rel: "noopener noreferrer",
+        },
+      }),
+
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+
+        HTMLAttributes: {
+          class:
+            "my-6 max-h-[700px] w-auto max-w-full rounded-2xl border border-zinc-200 object-contain dark:border-zinc-700",
         },
       }),
 
@@ -146,6 +714,7 @@ export default function NotesEditor({ note }: Props) {
 
       Table.configure({
         resizable: true,
+
         HTMLAttributes: {
           class:
             "w-full border-collapse my-6",
@@ -170,6 +739,12 @@ export default function NotesEditor({ note }: Props) {
       );
     },
   });
+
+  /*
+   * ---------------------------------------------------------
+   * LOAD SUBJECT / MODULE
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     let cancelled = false;
@@ -219,10 +794,14 @@ export default function NotesEditor({ note }: Props) {
     note.moduleId,
   ]);
 
+  /*
+   * ---------------------------------------------------------
+   * SYNC EDITOR WITH NOTE
+   * ---------------------------------------------------------
+   */
+
   useEffect(() => {
-    if (!editor) {
-      return;
-    }
+    if (!editor) return;
 
     const incomingContent =
       note.content || "";
@@ -246,10 +825,18 @@ export default function NotesEditor({ note }: Props) {
     setPinned(note.pinned);
     setArchived(note.archived);
 
-    titleRef.current = note.title;
+    titleRef.current =
+      note.title;
+
     contentRef.current =
       incomingContent;
   }, [editor, note]);
+
+  /*
+   * ---------------------------------------------------------
+   * CLEANUP
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     return () => {
@@ -261,11 +848,16 @@ export default function NotesEditor({ note }: Props) {
     };
   }, []);
 
+  /*
+   * ---------------------------------------------------------
+   * TITLE
+   * ---------------------------------------------------------
+   */
+
   function handleTitleChange(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
-    const value =
-      e.target.value;
+    const value = e.target.value;
 
     setTitle(value);
 
@@ -292,9 +884,14 @@ export default function NotesEditor({ note }: Props) {
     );
   }
 
+  /*
+   * ---------------------------------------------------------
+   * PIN
+   * ---------------------------------------------------------
+   */
+
   async function handlePin() {
-    const nextPinned =
-      !pinned;
+    const nextPinned = !pinned;
 
     setPinned(nextPinned);
 
@@ -312,6 +909,12 @@ export default function NotesEditor({ note }: Props) {
       setPinned(!nextPinned);
     }
   }
+
+  /*
+   * ---------------------------------------------------------
+   * ARCHIVE
+   * ---------------------------------------------------------
+   */
 
   async function handleArchive() {
     const nextArchived =
@@ -334,15 +937,19 @@ export default function NotesEditor({ note }: Props) {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * DELETE
+   * ---------------------------------------------------------
+   */
+
   async function handleDelete() {
     const confirmed =
       window.confirm(
         "Are you sure you want to delete this note?\n\nThis action cannot be undone."
       );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       await NoteService.delete(
@@ -364,26 +971,27 @@ export default function NotesEditor({ note }: Props) {
     }
   }
 
+  /*
+   * ---------------------------------------------------------
+   * LINK
+   * ---------------------------------------------------------
+   */
+
   function handleLink() {
-    if (!editor) {
-      return;
-    }
+    if (!editor) return;
 
     const previousUrl =
       editor.getAttributes(
         "link"
       ).href;
 
-    const url =
-      window.prompt(
-        "Enter URL",
-        previousUrl ||
-          "https://"
-      );
+    const url = window.prompt(
+      "Enter URL",
+      previousUrl ||
+        "https://"
+    );
 
-    if (url === null) {
-      return;
-    }
+    if (url === null) return;
 
     if (url.trim() === "") {
       editor
@@ -417,10 +1025,14 @@ export default function NotesEditor({ note }: Props) {
       .run();
   }
 
+  /*
+   * ---------------------------------------------------------
+   * HIGHLIGHT
+   * ---------------------------------------------------------
+   */
+
   function handleHighlight() {
-    if (!editor) {
-      return;
-    }
+    if (!editor) return;
 
     if (
       editor.isActive(
@@ -445,6 +1057,12 @@ export default function NotesEditor({ note }: Props) {
       .run();
   }
 
+  /*
+   * ---------------------------------------------------------
+   * LOADING
+   * ---------------------------------------------------------
+   */
+
   if (!editor) {
     return (
       <div className="card p-8">
@@ -455,17 +1073,12 @@ export default function NotesEditor({ note }: Props) {
 
   return (
     <div className="space-y-6">
-
       <div className="card overflow-hidden">
-
         {/* HEADER */}
 
-        <div className="border-b border-zinc-200 p-6 md:p-8 dark:border-zinc-700">
-
+        <div className="border-b border-zinc-200 p-6 dark:border-zinc-700 md:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-
             <div className="min-w-0 flex-1">
-
               <input
                 value={title}
                 onChange={
@@ -477,7 +1090,6 @@ export default function NotesEditor({ note }: Props) {
               />
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
-
                 <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
                   {note.category}
                 </span>
@@ -485,7 +1097,6 @@ export default function NotesEditor({ note }: Props) {
                 {subject && (
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
                     {subject.name}
-
                     {subject.code
                       ? ` · ${subject.code}`
                       : ""}
@@ -509,22 +1120,18 @@ export default function NotesEditor({ note }: Props) {
                     Archived
                   </span>
                 )}
-
               </div>
 
               {subject && (
                 <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-
                   <span>
                     Semester{" "}
                     {subject.semester}
                   </span>
 
                   <span>
-                    {subject.credits}{" "}
-                    credit
-                    {subject.credits !==
-                    1
+                    {subject.credits} credit
+                    {subject.credits !== 1
                       ? "s"
                       : ""}
                   </span>
@@ -532,43 +1139,42 @@ export default function NotesEditor({ note }: Props) {
                   {subject.faculty && (
                     <span>
                       Faculty:{" "}
-                      {
-                        subject.faculty
-                      }
+                      {subject.faculty}
                     </span>
                   )}
-
                 </div>
               )}
-
             </div>
 
             <div className="flex shrink-0 flex-col items-start gap-3 xl:items-end">
-
               <span
                 className={`text-xs font-medium ${
                   status ===
                   "Failed to save"
                     ? "text-red-500"
                     : status ===
-                      "Saving..."
-                    ? "text-amber-600"
-                    : status ===
-                      "Unsaved"
-                    ? "text-zinc-500 dark:text-zinc-400"
-                    : "text-emerald-600"
+                        "Saving..."
+                      ? "text-amber-600"
+                      : status ===
+                          "Unsaved"
+                        ? "text-zinc-500 dark:text-zinc-400"
+                        : status.includes(
+                              "Attachment"
+                            ) ||
+                            status.includes(
+                              "attachments"
+                            )
+                          ? "text-violet-600 dark:text-violet-400"
+                          : "text-emerald-600"
                 }`}
               >
                 {status}
               </span>
 
               <div className="flex flex-wrap gap-2">
-
                 <button
                   type="button"
-                  onClick={
-                    handlePin
-                  }
+                  onClick={handlePin}
                   className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/10"
                 >
                   {pinned
@@ -597,22 +1203,16 @@ export default function NotesEditor({ note }: Props) {
                 >
                   🗑 Delete
                 </button>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
 
         {/* TAGS */}
 
         {note.tags.length > 0 && (
           <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-700 md:px-8">
-
             <div className="flex flex-wrap gap-2">
-
               {note.tags.map(
                 (tag) => (
                   <span
@@ -623,18 +1223,43 @@ export default function NotesEditor({ note }: Props) {
                   </span>
                 )
               )}
-
             </div>
-
           </div>
         )}
+
+        {/* PROMINENT FILE UPLOAD */}
+
+        <div className="border-b border-zinc-200 bg-violet-50/60 px-5 py-4 dark:border-zinc-700 dark:bg-violet-500/5 md:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                Attach files or images
+              </p>
+
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                Select multiple files at once. Images are added directly to your note. Other files are saved as attachments. Max 25 MB per file.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                openFilePicker
+              }
+              disabled={uploading}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {uploading
+                ? `Uploading ${uploadIndex} of ${uploadTotal}`
+                : "📎 Attach Files / Images"}
+            </button>
+          </div>
+        </div>
 
         {/* TOOLBAR */}
 
         <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95 md:px-4">
-
           <div className="flex flex-wrap items-center gap-1">
-
             <ToolbarButton
               active={editor.isActive(
                 "bold"
@@ -840,7 +1465,8 @@ export default function NotesEditor({ note }: Props) {
 
             <ToolbarButton
               active={editor.isActive({
-                textAlign: "left",
+                textAlign:
+                  "left",
               })}
               onClick={() =>
                 editor
@@ -856,13 +1482,16 @@ export default function NotesEditor({ note }: Props) {
 
             <ToolbarButton
               active={editor.isActive({
-                textAlign: "center",
+                textAlign:
+                  "center",
               })}
               onClick={() =>
                 editor
                   .chain()
                   .focus()
-                  .setTextAlign("center")
+                  .setTextAlign(
+                    "center"
+                  )
                   .run()
               }
               title="Align Center"
@@ -872,7 +1501,8 @@ export default function NotesEditor({ note }: Props) {
 
             <ToolbarButton
               active={editor.isActive({
-                textAlign: "right",
+                textAlign:
+                  "right",
               })}
               onClick={() =>
                 editor
@@ -908,6 +1538,22 @@ export default function NotesEditor({ note }: Props) {
               title="Highlight"
             >
               🖍
+            </ToolbarButton>
+
+            <ToolbarDivider />
+
+            {/* FILE UPLOAD */}
+
+            <ToolbarButton
+              disabled={uploading}
+              onClick={
+                openFilePicker
+              }
+              title="Attach Multiple Files or Images"
+            >
+              {uploading
+                ? `${uploadIndex}/${uploadTotal}`
+                : "📎"}
             </ToolbarButton>
 
             <ToolbarDivider />
@@ -1050,27 +1696,178 @@ export default function NotesEditor({ note }: Props) {
             >
               ↷
             </ToolbarButton>
-
           </div>
-
         </div>
+
+        {/* SINGLE HIDDEN INPUT */}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          accept={ACCEPTED_FILES}
+          onChange={
+            handleFileInputChange
+          }
+        />
+
+        {/* UPLOAD PROGRESS */}
+
+        {uploading && (
+          <div className="border-b border-zinc-200 bg-violet-50 px-5 py-3 dark:border-zinc-700 dark:bg-violet-500/10">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-violet-700 dark:text-violet-300">
+                Uploading file{" "}
+                {uploadIndex} of{" "}
+                {uploadTotal}...
+              </span>
+
+              <span className="font-semibold text-violet-700 dark:text-violet-300">
+                {uploadProgress}%
+              </span>
+            </div>
+
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20">
+              <div
+                className="h-full rounded-full bg-violet-600 transition-all duration-200"
+                style={{
+                  width: `${uploadProgress}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {uploadError && (
+          <div className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-600 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-400">
+            {uploadError}
+          </div>
+        )}
 
         {/* EDITOR */}
 
         <div className="p-5 md:p-8">
-
           <EditorContent
             editor={editor}
             className="notes-editor"
             onBlur={flushSave}
           />
-
         </div>
-
       </div>
 
-      <style jsx global>{`
+      {/* =====================================================
+          ALL ATTACHMENTS
+          ===================================================== */}
 
+      {attachments.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="border-b border-zinc-200 px-6 py-5 dark:border-zinc-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+                  Attachments
+                </h2>
+
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  {attachments.length}{" "}
+                  {attachments.length ===
+                  1
+                    ? "file"
+                    : "files"}{" "}
+                  attached to this note
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  openFilePicker
+                }
+                disabled={uploading}
+                className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+              >
+                + Add More
+              </button>
+            </div>
+          </div>
+
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
+            {attachments.map(
+              (attachment) => {
+                const isImage =
+                  attachment.fileType.startsWith(
+                    "image/"
+                  );
+
+                return (
+                  <div
+                    key={attachment.id}
+                    className="p-5 transition hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-xl dark:bg-violet-500/15">
+                          {isImage
+                            ? "🖼️"
+                            : "📎"}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
+                            {
+                              attachment.fileName
+                            }
+                          </p>
+
+                          <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                            {
+                              attachment.fileType
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        {/* VIEW */}
+
+                        <a
+                          href={
+                            attachment.fileUrl
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/10"
+                        >
+                          👁 View
+                        </a>
+
+                        {/* DOWNLOAD */}
+
+                        <a
+                          href={
+                            attachment.fileUrl
+                          }
+                          download={
+                            attachment.fileName
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
+                        >
+                          ⬇ Download
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
         .toolbar-button {
           display: inline-flex;
           min-width: 36px;
@@ -1106,6 +1903,20 @@ export default function NotesEditor({ note }: Props) {
         .toolbar-button:disabled {
           cursor: not-allowed;
           opacity: 0.3;
+        }
+
+        .dark .toolbar-button {
+          color: rgb(212 212 216);
+        }
+
+        .dark .toolbar-button:hover:not(:disabled) {
+          background: rgb(39 39 42);
+          color: rgb(167 139 250);
+        }
+
+        .dark .toolbar-button-active {
+          background: rgb(76 29 149 / 0.35);
+          color: rgb(196 181 253);
         }
 
         .notes-editor .ProseMirror {
@@ -1177,30 +1988,19 @@ export default function NotesEditor({ note }: Props) {
           padding: 0;
         }
 
-        .notes-editor
-          .ProseMirror
-          ul[data-type="taskList"]
-          li {
+        .notes-editor .ProseMirror ul[data-type="taskList"] li {
           display: flex;
           align-items: flex-start;
           gap: 0.6rem;
           margin: 0.5rem 0;
         }
 
-        .notes-editor
-          .ProseMirror
-          ul[data-type="taskList"]
-          li
-          > label {
+        .notes-editor .ProseMirror ul[data-type="taskList"] li > label {
           margin-top: 0.35rem;
           flex-shrink: 0;
         }
 
-        .notes-editor
-          .ProseMirror
-          ul[data-type="taskList"]
-          li
-          > div {
+        .notes-editor .ProseMirror ul[data-type="taskList"] li > div {
           flex: 1;
         }
 
@@ -1258,6 +2058,10 @@ export default function NotesEditor({ note }: Props) {
           border-top: 1px solid rgb(228 228 231);
         }
 
+        .dark .notes-editor .ProseMirror hr {
+          border-top-color: rgb(63 63 70);
+        }
+
         .notes-editor .ProseMirror a {
           color: rgb(124 58 237);
           cursor: pointer;
@@ -1265,11 +2069,17 @@ export default function NotesEditor({ note }: Props) {
           text-underline-offset: 2px;
         }
 
-        .notes-editor
-          .ProseMirror
-          mark {
+        .notes-editor .ProseMirror mark {
           border-radius: 3px;
           padding: 0 2px;
+        }
+
+        .notes-editor .ProseMirror img {
+          display: block;
+          max-width: 100%;
+          height: auto;
+          margin: 1.5rem auto;
+          border-radius: 14px;
         }
 
         .notes-editor .ProseMirror table {
@@ -1290,6 +2100,11 @@ export default function NotesEditor({ note }: Props) {
           text-align: left;
         }
 
+        .dark .notes-editor .ProseMirror th,
+        .dark .notes-editor .ProseMirror td {
+          border-color: rgb(63 63 70);
+        }
+
         .notes-editor .ProseMirror th {
           background: rgb(250 250 250);
           font-weight: 700;
@@ -1300,29 +2115,19 @@ export default function NotesEditor({ note }: Props) {
           color: rgb(244 244 245);
         }
 
-        .dark .notes-editor .ProseMirror td {
-          border-color: rgb(63 63 70);
-        }
-
-        .notes-editor .ProseMirror
-          .selectedCell {
+        .notes-editor .ProseMirror .selectedCell {
           background: rgb(237 233 254);
         }
 
-        .notes-editor
-          .ProseMirror
-          p.is-editor-empty:first-child::before {
-          content:
-            "Start writing your notes...";
+        .notes-editor .ProseMirror p.is-editor-empty:first-child::before {
+          content: "Start writing your notes...";
           float: left;
           height: 0;
           pointer-events: none;
           color: rgb(161 161 170);
         }
 
-        .notes-editor
-          .ProseMirror
-          ::selection {
+        .notes-editor .ProseMirror ::selection {
           background: rgb(221 214 254);
         }
 
@@ -1349,9 +2154,7 @@ export default function NotesEditor({ note }: Props) {
             min-width: 600px;
           }
         }
-
       `}</style>
-
     </div>
   );
 }
