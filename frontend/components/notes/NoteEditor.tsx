@@ -31,12 +31,8 @@ import {
   addDoc,
   collection,
   doc,
-  getDocs,
   getDoc,
-  orderBy,
-  query,
   serverTimestamp,
-  where,
 } from "firebase/firestore";
 
 import { Note } from "@/types/note";
@@ -58,7 +54,6 @@ interface Attachment {
   fileName: string;
   fileType: string;
   fileUrl: string;
-  createdAt?: unknown;
 }
 
 type NoteWithFile = Note & {
@@ -93,34 +88,19 @@ export default function NotesEditor({ note }: Props) {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [module, setModule] = useState<Module | null>(null);
 
-  /*
-   * IMPORTANT:
-   * We now keep an ARRAY of attachments instead of
-   * only one attachment.
-   */
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const [uploadIndex, setUploadIndex] = useState(0);
-  const [uploadTotal, setUploadTotal] = useState(0);
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const titleRef = useRef(note.title);
   const contentRef = useRef(note.content || "");
 
-  const timeoutRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
 
-  async function saveNote(
-    newTitle: string,
-    newContent: string
-  ) {
+  async function saveNote(newTitle: string, newContent: string) {
     if (savingRef.current) return;
 
     savingRef.current = true;
@@ -141,10 +121,7 @@ export default function NotesEditor({ note }: Props) {
     }
   }
 
-  function scheduleSave(
-    newTitle: string,
-    newContent: string
-  ) {
+  function scheduleSave(newTitle: string, newContent: string) {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -156,12 +133,6 @@ export default function NotesEditor({ note }: Props) {
     }, 1000);
   }
 
-  /*
-   * ---------------------------------------------------------
-   * CLOUDINARY UPLOAD
-   * ---------------------------------------------------------
-   */
-
   function uploadToCloudinary(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const cloudName =
@@ -171,30 +142,18 @@ export default function NotesEditor({ note }: Props) {
         process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
       if (!cloudName) {
-        reject(
-          new Error(
-            "Cloudinary cloud name is missing."
-          )
-        );
+        reject(new Error("Cloudinary cloud name is missing."));
         return;
       }
 
       if (!uploadPreset) {
-        reject(
-          new Error(
-            "Cloudinary upload preset is missing."
-          )
-        );
+        reject(new Error("Cloudinary upload preset is missing."));
         return;
       }
 
       const formData = new FormData();
-
       formData.append("file", file);
-      formData.append(
-        "upload_preset",
-        uploadPreset
-      );
+      formData.append("upload_preset", uploadPreset);
 
       const xhr = new XMLHttpRequest();
 
@@ -214,14 +173,9 @@ export default function NotesEditor({ note }: Props) {
       };
 
       xhr.onload = () => {
-        if (
-          xhr.status >= 200 &&
-          xhr.status < 300
-        ) {
+        if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            const response = JSON.parse(
-              xhr.responseText
-            );
+            const response = JSON.parse(xhr.responseText);
 
             if (!response.secure_url) {
               reject(
@@ -234,20 +188,14 @@ export default function NotesEditor({ note }: Props) {
 
             resolve(response.secure_url);
           } catch {
-            reject(
-              new Error(
-                "Invalid response from Cloudinary."
-              )
-            );
+            reject(new Error("Invalid response from Cloudinary."));
           }
 
           return;
         }
 
         try {
-          const response = JSON.parse(
-            xhr.responseText
-          );
+          const response = JSON.parse(xhr.responseText);
 
           reject(
             new Error(
@@ -256,11 +204,7 @@ export default function NotesEditor({ note }: Props) {
             )
           );
         } catch {
-          reject(
-            new Error(
-              "Cloudinary upload failed."
-            )
-          );
+          reject(new Error("Cloudinary upload failed."));
         }
       };
 
@@ -273,344 +217,128 @@ export default function NotesEditor({ note }: Props) {
       };
 
       xhr.onabort = () => {
-        reject(
-          new Error(
-            "Cloudinary upload was cancelled."
-          )
-        );
+        reject(new Error("Cloudinary upload was cancelled."));
       };
 
       xhr.send(formData);
     });
   }
 
-  /*
-   * ---------------------------------------------------------
-   * LOAD ALL ATTACHMENTS
-   * ---------------------------------------------------------
-   */
-
   useEffect(() => {
     let cancelled = false;
 
-    async function loadAttachments() {
+    async function loadAttachment() {
+      if (!noteWithFile.fileId) {
+        setAttachment(null);
+        return;
+      }
+
       try {
-        const attachmentsMap =
-          new Map<string, Attachment>();
-
-        /*
-         * NEW SYSTEM:
-         * Find every attachment belonging to this note.
-         */
-        const attachmentsQuery = query(
-          collection(db, "uploaded_files"),
-          where("noteId", "==", note.id)
+        const snapshot = await getDoc(
+          doc(db, "uploaded_files", noteWithFile.fileId)
         );
 
-        const snapshot = await getDocs(
-          attachmentsQuery
-        );
-
-        snapshot.forEach((item) => {
-          const data = item.data();
-
-          attachmentsMap.set(item.id, {
-            id: item.id,
-            fileName:
-              data.fileName || "Attachment",
-            fileType:
-              data.fileType ||
-              "application/octet-stream",
-            fileUrl: data.fileUrl || "",
-            createdAt: data.createdAt,
-          });
-        });
-
-        /*
-         * LEGACY SUPPORT:
-         *
-         * Your previous version stored only fileId
-         * inside the note and did NOT store noteId
-         * inside uploaded_files.
-         *
-         * We load that old file too so it doesn't
-         * suddenly disappear.
-         */
-        if (noteWithFile.fileId) {
-          try {
-            const oldFileSnapshot =
-              await getDoc(
-                doc(
-                  db,
-                  "uploaded_files",
-                  noteWithFile.fileId
-                )
-              );
-
-            if (oldFileSnapshot.exists()) {
-              const data =
-                oldFileSnapshot.data();
-
-              attachmentsMap.set(
-                oldFileSnapshot.id,
-                {
-                  id: oldFileSnapshot.id,
-                  fileName:
-                    data.fileName ||
-                    "Attachment",
-                  fileType:
-                    data.fileType ||
-                    "application/octet-stream",
-                  fileUrl:
-                    data.fileUrl || "",
-                  createdAt:
-                    data.createdAt,
-                }
-              );
-            }
-          } catch (error) {
-            console.error(
-              "Failed to load legacy attachment:",
-              error
-            );
-          }
+        if (!snapshot.exists()) {
+          setAttachment(null);
+          return;
         }
 
         if (cancelled) return;
 
-        const allAttachments =
-          Array.from(
-            attachmentsMap.values()
-          );
+        const data = snapshot.data();
 
-        /*
-         * Sort newest first.
-         *
-         * We intentionally sort in JavaScript
-         * so Firestore does NOT require a composite index.
-         */
-        allAttachments.sort((a, b) => {
-          const aTime =
-            a.createdAt &&
-            typeof a.createdAt === "object" &&
-            "seconds" in a.createdAt
-              ? Number(
-                  (
-                    a.createdAt as {
-                      seconds: number;
-                    }
-                  ).seconds
-                )
-              : 0;
-
-          const bTime =
-            b.createdAt &&
-            typeof b.createdAt === "object" &&
-            "seconds" in b.createdAt
-              ? Number(
-                  (
-                    b.createdAt as {
-                      seconds: number;
-                    }
-                  ).seconds
-                )
-              : 0;
-
-          return bTime - aTime;
+        setAttachment({
+          id: snapshot.id,
+          fileName: data.fileName || "Attachment",
+          fileType:
+            data.fileType || "application/octet-stream",
+          fileUrl: data.fileUrl || "",
         });
-
-        setAttachments(allAttachments);
       } catch (error) {
-        console.error(
-          "Failed to load attachments:",
-          error
-        );
+        console.error("Failed to load attachment:", error);
       }
     }
 
-    loadAttachments();
+    loadAttachment();
 
     return () => {
       cancelled = true;
     };
-  }, [note.id, noteWithFile.fileId]);
+  }, [noteWithFile.fileId]);
 
-  /*
-   * ---------------------------------------------------------
-   * UPLOAD ONE FILE
-   * ---------------------------------------------------------
-   */
-
-  async function uploadSingleFile(
-    file: File
-  ) {
+  async function handleFileUpload(file: File) {
     if (!auth.currentUser) {
-      throw new Error(
-        "You must be logged in to upload files."
-      );
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error(
-        `"${file.name}" is larger than 25 MB.`
-      );
-    }
-
-    const secureUrl =
-      await uploadToCloudinary(file);
-
-    /*
-     * IMPORTANT:
-     * We now save noteId with every attachment.
-     */
-    const uploadedFileRef =
-      await addDoc(
-        collection(db, "uploaded_files"),
-        {
-          noteId: note.id,
-
-          unitId: note.moduleId ?? "",
-
-          studentId:
-            auth.currentUser.uid,
-
-          fileName: file.name,
-
-          fileType:
-            file.type ||
-            "application/octet-stream",
-
-          fileUrl: secureUrl,
-
-          createdAt:
-            serverTimestamp(),
-
-          updatedAt:
-            serverTimestamp(),
-        }
-      );
-
-    const uploadedAttachment: Attachment = {
-      id: uploadedFileRef.id,
-      fileName: file.name,
-      fileType:
-        file.type ||
-        "application/octet-stream",
-      fileUrl: secureUrl,
-    };
-
-    /*
-     * Add to the existing list.
-     *
-     * DO NOT replace the old attachments.
-     */
-    setAttachments((previous) => [
-      ...previous,
-      uploadedAttachment,
-    ]);
-
-    /*
-     * If it's an image, also insert it
-     * into the Tiptap editor.
-     */
-    if (
-      file.type.startsWith("image/") &&
-      editor
-    ) {
-      editor
-        .chain()
-        .focus()
-        .setImage({
-          src: secureUrl,
-          alt: file.name,
-          title: file.name,
-        })
-        .run();
-    }
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * MULTIPLE FILE UPLOAD
-   * ---------------------------------------------------------
-   */
-
-  async function handleFileUpload(
-    files: File[]
-  ) {
-    if (!auth.currentUser) {
-      alert(
-        "You must be logged in to upload files."
-      );
+      alert("You must be logged in to upload files.");
       return;
     }
 
-    if (files.length === 0) return;
+    if (file.size > MAX_FILE_SIZE) {
+      alert("File size must be 25 MB or smaller.");
+      return;
+    }
 
     setUploading(true);
-    setUploadError(null);
     setUploadProgress(0);
-    setUploadTotal(files.length);
-    setUploadIndex(0);
-
-    let failedFiles: string[] = [];
+    setUploadError(null);
 
     try {
-      /*
-       * Upload sequentially.
-       *
-       * This is safer than firing many Cloudinary
-       * uploads simultaneously and gives us clean
-       * progress like 1/3, 2/3, 3/3.
-       */
-      for (
-        let index = 0;
-        index < files.length;
-        index++
-      ) {
-        const file = files[index];
-
-        setUploadIndex(index + 1);
-        setUploadProgress(0);
-
-        try {
-          await uploadSingleFile(file);
-        } catch (error) {
-          console.error(
-            `Failed to upload ${file.name}:`,
-            error
-          );
-
-          failedFiles.push(
-            file.name
-          );
-        }
-      }
+      const secureUrl = await uploadToCloudinary(file);
 
       setUploadProgress(100);
 
-      if (failedFiles.length > 0) {
-        const message =
-          failedFiles.length ===
-          files.length
-            ? "None of the selected files could be uploaded."
-            : `These files could not be uploaded:\n${failedFiles.join(
-                "\n"
-              )}`;
+      const uploadedFileRef = await addDoc(
+        collection(db, "uploaded_files"),
+        {
+          unitId: note.moduleId ?? "",
+          studentId: auth.currentUser.uid,
+          fileName: file.name,
+          fileType:
+            file.type || "application/octet-stream",
+          fileUrl: secureUrl,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
 
-        setUploadError(message);
-        alert(message);
-      } else {
-        setStatus(
-          files.length === 1
-            ? "Attachment saved"
-            : `${files.length} attachments saved`
-        );
+      await NoteService.update(note.id, {
+        fileId: uploadedFileRef.id,
+      } as Partial<typeof note>);
+
+      const uploadedAttachment: Attachment = {
+        id: uploadedFileRef.id,
+        fileName: file.name,
+        fileType:
+          file.type || "application/octet-stream",
+        fileUrl: secureUrl,
+      };
+
+      setAttachment(uploadedAttachment);
+
+      if (file.type.startsWith("image/") && editor) {
+        editor
+          .chain()
+          .focus()
+          .setImage({
+            src: secureUrl,
+            alt: file.name,
+            title: file.name,
+          })
+          .run();
       }
+
+      setStatus("Attachment saved");
+    } catch (error) {
+      console.error("Failed to upload attachment:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to upload attachment.";
+
+      setUploadError(message);
+      alert(`Failed to upload file.\n\n${message}`);
     } finally {
       setUploading(false);
-      setUploadIndex(0);
-      setUploadTotal(0);
 
       setTimeout(() => {
         setUploadProgress(0);
@@ -618,45 +346,22 @@ export default function NotesEditor({ note }: Props) {
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * FILE INPUT
-   * ---------------------------------------------------------
-   */
-
   function handleFileInputChange(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
-    const selectedFiles = Array.from(
-      event.target.files || []
-    );
+    const file = event.target.files?.[0];
 
-    /*
-     * Reset the input so selecting the exact
-     * same files again still triggers onChange.
-     */
     event.target.value = "";
 
-    if (selectedFiles.length === 0) {
-      return;
-    }
+    if (!file) return;
 
-    void handleFileUpload(
-      selectedFiles
-    );
+    void handleFileUpload(file);
   }
 
   function openFilePicker() {
     if (uploading) return;
-
     fileInputRef.current?.click();
   }
-
-  /*
-   * ---------------------------------------------------------
-   * TIPTAP EDITOR
-   * ---------------------------------------------------------
-   */
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -672,7 +377,6 @@ export default function NotesEditor({ note }: Props) {
         openOnClick: false,
         autolink: true,
         defaultProtocol: "https",
-
         HTMLAttributes: {
           class:
             "text-violet-600 underline underline-offset-2",
@@ -684,7 +388,6 @@ export default function NotesEditor({ note }: Props) {
       Image.configure({
         inline: false,
         allowBase64: false,
-
         HTMLAttributes: {
           class:
             "my-6 max-h-[700px] w-auto max-w-full rounded-2xl border border-zinc-200 object-contain dark:border-zinc-700",
@@ -696,10 +399,7 @@ export default function NotesEditor({ note }: Props) {
       }),
 
       TextAlign.configure({
-        types: [
-          "heading",
-          "paragraph",
-        ],
+        types: ["heading", "paragraph"],
       }),
 
       TaskList.configure({
@@ -714,10 +414,8 @@ export default function NotesEditor({ note }: Props) {
 
       Table.configure({
         resizable: true,
-
         HTMLAttributes: {
-          class:
-            "w-full border-collapse my-6",
+          class: "w-full border-collapse my-6",
         },
       }),
 
@@ -733,18 +431,9 @@ export default function NotesEditor({ note }: Props) {
 
       contentRef.current = html;
 
-      scheduleSave(
-        titleRef.current,
-        html
-      );
+      scheduleSave(titleRef.current, html);
     },
   });
-
-  /*
-   * ---------------------------------------------------------
-   * LOAD SUBJECT / MODULE
-   * ---------------------------------------------------------
-   */
 
   useEffect(() => {
     let cancelled = false;
@@ -752,10 +441,9 @@ export default function NotesEditor({ note }: Props) {
     async function loadContext() {
       try {
         if (note.subjectId) {
-          const subjectData =
-            await SubjectService.get(
-              note.subjectId
-            );
+          const subjectData = await SubjectService.get(
+            note.subjectId
+          );
 
           if (!cancelled) {
             setSubject(subjectData);
@@ -765,10 +453,9 @@ export default function NotesEditor({ note }: Props) {
         }
 
         if (note.moduleId) {
-          const moduleData =
-            await ModuleService.get(
-              note.moduleId
-            );
+          const moduleData = await ModuleService.get(
+            note.moduleId
+          );
 
           if (!cancelled) {
             setModule(moduleData);
@@ -789,70 +476,35 @@ export default function NotesEditor({ note }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [
-    note.subjectId,
-    note.moduleId,
-  ]);
-
-  /*
-   * ---------------------------------------------------------
-   * SYNC EDITOR WITH NOTE
-   * ---------------------------------------------------------
-   */
+  }, [note.subjectId, note.moduleId]);
 
   useEffect(() => {
     if (!editor) return;
 
-    const incomingContent =
-      note.content || "";
+    const incomingContent = note.content || "";
+    const currentContent = editor.getHTML();
 
-    const currentContent =
-      editor.getHTML();
-
-    if (
-      currentContent !==
-      incomingContent
-    ) {
-      editor.commands.setContent(
-        incomingContent,
-        {
-          emitUpdate: false,
-        }
-      );
+    if (currentContent !== incomingContent) {
+      editor.commands.setContent(incomingContent, {
+        emitUpdate: false,
+      });
     }
 
     setTitle(note.title);
     setPinned(note.pinned);
     setArchived(note.archived);
 
-    titleRef.current =
-      note.title;
-
-    contentRef.current =
-      incomingContent;
+    titleRef.current = note.title;
+    contentRef.current = incomingContent;
   }, [editor, note]);
-
-  /*
-   * ---------------------------------------------------------
-   * CLEANUP
-   * ---------------------------------------------------------
-   */
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(
-          timeoutRef.current
-        );
+        clearTimeout(timeoutRef.current);
       }
     };
   }, []);
-
-  /*
-   * ---------------------------------------------------------
-   * TITLE
-   * ---------------------------------------------------------
-   */
 
   function handleTitleChange(
     e: React.ChangeEvent<HTMLInputElement>
@@ -860,21 +512,14 @@ export default function NotesEditor({ note }: Props) {
     const value = e.target.value;
 
     setTitle(value);
-
     titleRef.current = value;
 
-    scheduleSave(
-      value,
-      contentRef.current
-    );
+    scheduleSave(value, contentRef.current);
   }
 
   async function flushSave() {
     if (timeoutRef.current) {
-      clearTimeout(
-        timeoutRef.current
-      );
-
+      clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
 
@@ -884,42 +529,23 @@ export default function NotesEditor({ note }: Props) {
     );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * PIN
-   * ---------------------------------------------------------
-   */
-
   async function handlePin() {
     const nextPinned = !pinned;
-
     setPinned(nextPinned);
 
     try {
-      await NoteService.pin(
-        note.id,
-        nextPinned
-      );
+      await NoteService.pin(note.id, nextPinned);
     } catch (error) {
       console.error(
         "Failed to update pin:",
         error
       );
-
       setPinned(!nextPinned);
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * ARCHIVE
-   * ---------------------------------------------------------
-   */
-
   async function handleArchive() {
-    const nextArchived =
-      !archived;
-
+    const nextArchived = !archived;
     setArchived(nextArchived);
 
     try {
@@ -932,63 +558,40 @@ export default function NotesEditor({ note }: Props) {
         "Failed to update archive:",
         error
       );
-
       setArchived(!nextArchived);
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * DELETE
-   * ---------------------------------------------------------
-   */
-
   async function handleDelete() {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this note?\n\nThis action cannot be undone."
-      );
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this note?\n\nThis action cannot be undone."
+    );
 
     if (!confirmed) return;
 
     try {
-      await NoteService.delete(
-        note.id
-      );
+      await NoteService.delete(note.id);
 
-      router.push(
-        "/dashboard/notes"
-      );
+      router.push("/dashboard/notes");
     } catch (error) {
       console.error(
         "Failed to delete note:",
         error
       );
 
-      alert(
-        "Failed to delete note."
-      );
+      alert("Failed to delete note.");
     }
   }
-
-  /*
-   * ---------------------------------------------------------
-   * LINK
-   * ---------------------------------------------------------
-   */
 
   function handleLink() {
     if (!editor) return;
 
     const previousUrl =
-      editor.getAttributes(
-        "link"
-      ).href;
+      editor.getAttributes("link").href;
 
     const url = window.prompt(
       "Enter URL",
-      previousUrl ||
-        "https://"
+      previousUrl || "https://"
     );
 
     if (url === null) return;
@@ -1003,16 +606,10 @@ export default function NotesEditor({ note }: Props) {
       return;
     }
 
-    let finalUrl =
-      url.trim();
+    let finalUrl = url.trim();
 
-    if (
-      !/^https?:\/\//i.test(
-        finalUrl
-      )
-    ) {
-      finalUrl =
-        `https://${finalUrl}`;
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = `https://${finalUrl}`;
     }
 
     editor
@@ -1025,20 +622,10 @@ export default function NotesEditor({ note }: Props) {
       .run();
   }
 
-  /*
-   * ---------------------------------------------------------
-   * HIGHLIGHT
-   * ---------------------------------------------------------
-   */
-
   function handleHighlight() {
     if (!editor) return;
 
-    if (
-      editor.isActive(
-        "highlight"
-      )
-    ) {
+    if (editor.isActive("highlight")) {
       editor
         .chain()
         .focus()
@@ -1056,12 +643,6 @@ export default function NotesEditor({ note }: Props) {
       })
       .run();
   }
-
-  /*
-   * ---------------------------------------------------------
-   * LOADING
-   * ---------------------------------------------------------
-   */
 
   if (!editor) {
     return (
@@ -1081,9 +662,7 @@ export default function NotesEditor({ note }: Props) {
             <div className="min-w-0 flex-1">
               <input
                 value={title}
-                onChange={
-                  handleTitleChange
-                }
+                onChange={handleTitleChange}
                 onBlur={flushSave}
                 placeholder="Untitled Note"
                 className="w-full border-none bg-transparent text-3xl font-bold tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300 dark:text-white dark:placeholder:text-zinc-600 md:text-4xl"
@@ -1125,8 +704,7 @@ export default function NotesEditor({ note }: Props) {
               {subject && (
                 <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
                   <span>
-                    Semester{" "}
-                    {subject.semester}
+                    Semester {subject.semester}
                   </span>
 
                   <span>
@@ -1138,8 +716,7 @@ export default function NotesEditor({ note }: Props) {
 
                   {subject.faculty && (
                     <span>
-                      Faculty:{" "}
-                      {subject.faculty}
+                      Faculty: {subject.faculty}
                     </span>
                   )}
                 </div>
@@ -1149,21 +726,13 @@ export default function NotesEditor({ note }: Props) {
             <div className="flex shrink-0 flex-col items-start gap-3 xl:items-end">
               <span
                 className={`text-xs font-medium ${
-                  status ===
-                  "Failed to save"
+                  status === "Failed to save"
                     ? "text-red-500"
-                    : status ===
-                        "Saving..."
+                    : status === "Saving..."
                       ? "text-amber-600"
-                      : status ===
-                          "Unsaved"
+                      : status === "Unsaved"
                         ? "text-zinc-500 dark:text-zinc-400"
-                        : status.includes(
-                              "Attachment"
-                            ) ||
-                            status.includes(
-                              "attachments"
-                            )
+                        : status === "Attachment saved"
                           ? "text-violet-600 dark:text-violet-400"
                           : "text-emerald-600"
                 }`}
@@ -1177,16 +746,12 @@ export default function NotesEditor({ note }: Props) {
                   onClick={handlePin}
                   className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/10"
                 >
-                  {pinned
-                    ? "📌 Unpin"
-                    : "📌 Pin"}
+                  {pinned ? "📌 Unpin" : "📌 Pin"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={
-                    handleArchive
-                  }
+                  onClick={handleArchive}
                   className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/10"
                 >
                   {archived
@@ -1196,9 +761,7 @@ export default function NotesEditor({ note }: Props) {
 
                 <button
                   type="button"
-                  onClick={
-                    handleDelete
-                  }
+                  onClick={handleDelete}
                   className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-400/30 dark:hover:bg-red-500/10"
                 >
                   🗑 Delete
@@ -1213,16 +776,14 @@ export default function NotesEditor({ note }: Props) {
         {note.tags.length > 0 && (
           <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-700 md:px-8">
             <div className="flex flex-wrap gap-2">
-              {note.tags.map(
-                (tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-white/10 dark:text-zinc-300"
-                  >
-                    #{tag}
-                  </span>
-                )
-              )}
+              {note.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-white/10 dark:text-zinc-300"
+                >
+                  #{tag}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -1233,25 +794,22 @@ export default function NotesEditor({ note }: Props) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                Attach files or images
+                Attach a file or image
               </p>
-
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                Select multiple files at once. Images are added directly to your note. Other files are saved as attachments. Max 25 MB per file.
+                Images are added directly to your note. Other files are saved as attachments. Max 25 MB.
               </p>
             </div>
 
             <button
               type="button"
-              onClick={
-                openFilePicker
-              }
+              onClick={openFilePicker}
               disabled={uploading}
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploading
-                ? `Uploading ${uploadIndex} of ${uploadTotal}`
-                : "📎 Attach Files / Images"}
+                ? `Uploading ${uploadProgress}%`
+                : "📎 Attach File / Image"}
             </button>
           </div>
         </div>
@@ -1261,15 +819,9 @@ export default function NotesEditor({ note }: Props) {
         <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95 md:px-4">
           <div className="flex flex-wrap items-center gap-1">
             <ToolbarButton
-              active={editor.isActive(
-                "bold"
-              )}
+              active={editor.isActive("bold")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleBold()
-                  .run()
+                editor.chain().focus().toggleBold().run()
               }
               title="Bold"
             >
@@ -1277,15 +829,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "italic"
-              )}
+              active={editor.isActive("italic")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleItalic()
-                  .run()
+                editor.chain().focus().toggleItalic().run()
               }
               title="Italic"
             >
@@ -1293,15 +839,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "underline"
-              )}
+              active={editor.isActive("underline")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleUnderline()
-                  .run()
+                editor.chain().focus().toggleUnderline().run()
               }
               title="Underline"
             >
@@ -1309,15 +849,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "strike"
-              )}
+              active={editor.isActive("strike")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleStrike()
-                  .run()
+                editor.chain().focus().toggleStrike().run()
               }
               title="Strikethrough"
             >
@@ -1327,17 +861,12 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              active={editor.isActive(
-                "heading",
-                { level: 2 }
-              )}
+              active={editor.isActive("heading", { level: 2 })}
               onClick={() =>
                 editor
                   .chain()
                   .focus()
-                  .toggleHeading({
-                    level: 2,
-                  })
+                  .toggleHeading({ level: 2 })
                   .run()
               }
               title="Heading 2"
@@ -1346,17 +875,12 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "heading",
-                { level: 3 }
-              )}
+              active={editor.isActive("heading", { level: 3 })}
               onClick={() =>
                 editor
                   .chain()
                   .focus()
-                  .toggleHeading({
-                    level: 3,
-                  })
+                  .toggleHeading({ level: 3 })
                   .run()
               }
               title="Heading 3"
@@ -1367,15 +891,9 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              active={editor.isActive(
-                "bulletList"
-              )}
+              active={editor.isActive("bulletList")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleBulletList()
-                  .run()
+                editor.chain().focus().toggleBulletList().run()
               }
               title="Bullet List"
             >
@@ -1383,15 +901,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "orderedList"
-              )}
+              active={editor.isActive("orderedList")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleOrderedList()
-                  .run()
+                editor.chain().focus().toggleOrderedList().run()
               }
               title="Numbered List"
             >
@@ -1399,15 +911,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "taskList"
-              )}
+              active={editor.isActive("taskList")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleTaskList()
-                  .run()
+                editor.chain().focus().toggleTaskList().run()
               }
               title="Task List"
             >
@@ -1417,15 +923,9 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              active={editor.isActive(
-                "blockquote"
-              )}
+              active={editor.isActive("blockquote")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleBlockquote()
-                  .run()
+                editor.chain().focus().toggleBlockquote().run()
               }
               title="Quote"
             >
@@ -1433,15 +933,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "codeBlock"
-              )}
+              active={editor.isActive("codeBlock")}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .toggleCodeBlock()
-                  .run()
+                editor.chain().focus().toggleCodeBlock().run()
               }
               title="Code Block"
             >
@@ -1450,11 +944,7 @@ export default function NotesEditor({ note }: Props) {
 
             <ToolbarButton
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .setHorizontalRule()
-                  .run()
+                editor.chain().focus().setHorizontalRule().run()
               }
               title="Horizontal Rule"
             >
@@ -1464,16 +954,9 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              active={editor.isActive({
-                textAlign:
-                  "left",
-              })}
+              active={editor.isActive({ textAlign: "left" })}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .setTextAlign("left")
-                  .run()
+                editor.chain().focus().setTextAlign("left").run()
               }
               title="Align Left"
             >
@@ -1481,18 +964,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive({
-                textAlign:
-                  "center",
-              })}
+              active={editor.isActive({ textAlign: "center" })}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .setTextAlign(
-                    "center"
-                  )
-                  .run()
+                editor.chain().focus().setTextAlign("center").run()
               }
               title="Align Center"
             >
@@ -1500,16 +974,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive({
-                textAlign:
-                  "right",
-              })}
+              active={editor.isActive({ textAlign: "right" })}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .setTextAlign("right")
-                  .run()
+                editor.chain().focus().setTextAlign("right").run()
               }
               title="Align Right"
             >
@@ -1519,9 +986,7 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              active={editor.isActive(
-                "link"
-              )}
+              active={editor.isActive("link")}
               onClick={handleLink}
               title="Add Link"
             >
@@ -1529,12 +994,8 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              active={editor.isActive(
-                "highlight"
-              )}
-              onClick={
-                handleHighlight
-              }
+              active={editor.isActive("highlight")}
+              onClick={handleHighlight}
               title="Highlight"
             >
               🖍
@@ -1542,19 +1003,25 @@ export default function NotesEditor({ note }: Props) {
 
             <ToolbarDivider />
 
-            {/* FILE UPLOAD */}
+            {/* FILE / IMAGE UPLOAD BUTTON */}
 
             <ToolbarButton
               disabled={uploading}
-              onClick={
-                openFilePicker
-              }
-              title="Attach Multiple Files or Images"
+              onClick={openFilePicker}
+              title="Attach File or Image"
             >
               {uploading
-                ? `${uploadIndex}/${uploadTotal}`
+                ? `${uploadProgress}%`
                 : "📎"}
             </ToolbarButton>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept={ACCEPTED_FILES}
+              onChange={handleFileInputChange}
+            />
 
             <ToolbarDivider />
 
@@ -1566,8 +1033,7 @@ export default function NotesEditor({ note }: Props) {
                   .insertTable({
                     rows: 3,
                     cols: 3,
-                    withHeaderRow:
-                      true,
+                    withHeaderRow: true,
                   })
                   .run()
               }
@@ -1576,9 +1042,7 @@ export default function NotesEditor({ note }: Props) {
               ▦
             </ToolbarButton>
 
-            {editor.isActive(
-              "table"
-            ) && (
+            {editor.isActive("table") && (
               <>
                 <ToolbarButton
                   onClick={() =>
@@ -1666,15 +1130,9 @@ export default function NotesEditor({ note }: Props) {
             <ToolbarDivider />
 
             <ToolbarButton
-              disabled={
-                !editor.can().undo()
-              }
+              disabled={!editor.can().undo()}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .undo()
-                  .run()
+                editor.chain().focus().undo().run()
               }
               title="Undo"
             >
@@ -1682,15 +1140,9 @@ export default function NotesEditor({ note }: Props) {
             </ToolbarButton>
 
             <ToolbarButton
-              disabled={
-                !editor.can().redo()
-              }
+              disabled={!editor.can().redo()}
               onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .redo()
-                  .run()
+                editor.chain().focus().redo().run()
               }
               title="Redo"
             >
@@ -1699,17 +1151,14 @@ export default function NotesEditor({ note }: Props) {
           </div>
         </div>
 
-        {/* SINGLE HIDDEN INPUT */}
+        {/* HIDDEN INPUT */}
 
         <input
           ref={fileInputRef}
           type="file"
-          multiple
           className="hidden"
           accept={ACCEPTED_FILES}
-          onChange={
-            handleFileInputChange
-          }
+          onChange={handleFileInputChange}
         />
 
         {/* UPLOAD PROGRESS */}
@@ -1718,9 +1167,7 @@ export default function NotesEditor({ note }: Props) {
           <div className="border-b border-zinc-200 bg-violet-50 px-5 py-3 dark:border-zinc-700 dark:bg-violet-500/10">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-violet-700 dark:text-violet-300">
-                Uploading file{" "}
-                {uploadIndex} of{" "}
-                {uploadTotal}...
+                Uploading attachment...
               </span>
 
               <span className="font-semibold text-violet-700 dark:text-violet-300">
@@ -1756,113 +1203,37 @@ export default function NotesEditor({ note }: Props) {
         </div>
       </div>
 
-      {/* =====================================================
-          ALL ATTACHMENTS
-          ===================================================== */}
+      {/* ATTACHMENT CARD */}
 
-      {attachments.length > 0 && (
-        <div className="card overflow-hidden">
-          <div className="border-b border-zinc-200 px-6 py-5 dark:border-zinc-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
-                  Attachments
-                </h2>
-
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                  {attachments.length}{" "}
-                  {attachments.length ===
-                  1
-                    ? "file"
-                    : "files"}{" "}
-                  attached to this note
-                </p>
+      {attachment && (
+        <div className="card p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-xl dark:bg-violet-500/15">
+                {attachment.fileType.startsWith("image/")
+                  ? "🖼️"
+                  : "📎"}
               </div>
 
-              <button
-                type="button"
-                onClick={
-                  openFilePicker
-                }
-                disabled={uploading}
-                className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
-              >
-                + Add More
-              </button>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
+                  {attachment.fileName}
+                </p>
+
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {attachment.fileType || "File"}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {attachments.map(
-              (attachment) => {
-                const isImage =
-                  attachment.fileType.startsWith(
-                    "image/"
-                  );
-
-                return (
-                  <div
-                    key={attachment.id}
-                    className="p-5 transition hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-xl dark:bg-violet-500/15">
-                          {isImage
-                            ? "🖼️"
-                            : "📎"}
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
-                            {
-                              attachment.fileName
-                            }
-                          </p>
-
-                          <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
-                            {
-                              attachment.fileType
-                            }
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 flex-wrap gap-2">
-                        {/* VIEW */}
-
-                        <a
-                          href={
-                            attachment.fileUrl
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/10"
-                        >
-                          👁 View
-                        </a>
-
-                        {/* DOWNLOAD */}
-
-                        <a
-                          href={
-                            attachment.fileUrl
-                          }
-                          download={
-                            attachment.fileName
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
-                        >
-                          ⬇ Download
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            )}
+            <a
+              href={attachment.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-violet-700"
+            >
+              Open File
+            </a>
           </div>
         </div>
       )}
@@ -2183,9 +1554,7 @@ function ToolbarButton({
       aria-pressed={active}
       disabled={disabled}
       className={`toolbar-button ${
-        active
-          ? "toolbar-button-active"
-          : ""
+        active ? "toolbar-button-active" : ""
       }`}
     >
       {children}
