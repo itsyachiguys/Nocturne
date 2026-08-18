@@ -5,29 +5,34 @@ interface PageHeaderProps {
   subtitle?: string;
   actionLabel?: string;
   actionIcon?: Icon;
+  onAction?: () => void;
 }
 
-// Every dashboard subpage opens with the same title + subtitle + single
-// primary action shape, so the pattern lives here once rather than being
-// retyped with slightly different spacing on each page.
 export function PageHeader({
   title,
   subtitle,
   actionLabel,
   actionIcon: ActionIcon,
+  onAction,
 }: PageHeaderProps) {
   return (
     <div className="mb-6 flex items-center justify-between">
       <div>
         <h2 className="text-[22px]">{title}</h2>
+
         {subtitle && (
           <p className="text-[13px] text-ink-secondary dark:text-ink-secondary-dark">
             {subtitle}
           </p>
         )}
       </div>
+
       {actionLabel && (
-        <button className="btn-primary">
+        <button
+          type="button"
+          onClick={onAction}
+          className="btn-primary"
+        >
           {ActionIcon && <ActionIcon size={16} />}
           {actionLabel}
         </button>
