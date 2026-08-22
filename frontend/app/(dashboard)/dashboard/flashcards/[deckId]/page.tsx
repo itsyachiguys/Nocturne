@@ -1,22 +1,35 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+
 import {
   IconArrowLeft,
   IconCards,
   IconPlus,
   IconTrash,
+  IconPlayerPlay,
+  IconBulb,
+  IconEye,
+  IconCheck,
   IconX,
+  IconClock,
+  IconRefresh,
 } from "@tabler/icons-react";
 
 import { FlashcardService } from "@/services/flashcard.service";
 import { auth } from "@/lib/firebase";
-import {
+
+import type {
+  CreateFlashcardData,
   Flashcard,
   FlashcardDeck,
-  FlashcardDifficulty,
 } from "@/types/flashcard";
+
+import CreateFlashcardModal from "@/components/flashcards/CreateFlashcardModal";
+import FlashcardList from "@/components/flashcards/FlashcardList";
+
+const STUDY_TIME = 30;
 
 export default function FlashcardDeckPage() {
   const params = useParams();
@@ -26,18 +39,40 @@ export default function FlashcardDeckPage() {
 
   const [deck, setDeck] = useState<FlashcardDeck | null>(null);
   const [cards, setCards] = useState<Flashcard[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-
   const [showAddCard, setShowAddCard] = useState(false);
   const [savingCard, setSavingCard] = useState(false);
+  const [error, setError] = useState("");
 
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [hint, setHint] = useState("");
-  const [tags, setTags] = useState("");
-  const [difficulty, setDifficulty] =
-    useState<FlashcardDifficulty>("new");
+  // =========================================================
+  // STUDY MODE
+  // =========================================================
+
+  const [isStudying, setIsStudying] = useState(false);
+  const [studyIndex, setStudyIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(STUDY_TIME);
+
+  const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const [answerResult, setAnswerResult] = useState<
+    "correct" | "incorrect" | null
+  >(null);
+
+  const [answering, setAnswering] = useState(false);
+
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0);
+  const [studyComplete, setStudyComplete] = useState(false);
+
+  const currentCard = cards[studyIndex];
+
+  // =========================================================
+  // LOAD DECK
+  // =========================================================
 
   useEffect(() => {
     let cancelled = false;
@@ -61,10 +96,11 @@ export default function FlashcardDeckPage() {
         setDeck(deckData);
         setCards(cardData);
       } catch (error) {
-        console.error(
-          "Failed to load flashcard deck:",
-          error
-        );
+        console.error("Failed to load flashcard deck:", error);
+
+        if (!cancelled) {
+          setError("Failed to load flashcard deck.");
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -81,72 +117,66 @@ export default function FlashcardDeckPage() {
     };
   }, [deckId, router]);
 
-  function resetCardForm() {
-    setQuestion("");
-    setAnswer("");
-    setHint("");
-    setTags("");
-    setDifficulty("new");
-  }
+  // =========================================================
+  // 30 SECOND STUDY TIMER
+  // =========================================================
 
-  function closeAddCard() {
-    if (savingCard) return;
+  useEffect(() => {
+    if (!isStudying || studyComplete || showAnswer) {
+      return;
+    }
 
-    setShowAddCard(false);
-    resetCardForm();
-  }
+    if (timeLeft <= 0) {
+      setShowAnswer(true);
+      setAnswerResult("incorrect");
+      return;
+    }
 
-  async function handleAddCard(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
 
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isStudying, studyComplete, showAnswer, timeLeft]);
+
+  // =========================================================
+  // ADD CARD
+  // =========================================================
+
+  async function handleAddCard(data: CreateFlashcardData) {
     const user = auth.currentUser;
 
     if (!user) {
-      alert("You must be logged in.");
-      return;
+      throw new Error("You must be logged in.");
     }
 
-    if (!question.trim()) {
-      alert("Please enter a question.");
-      return;
+    if (user.uid !== data.studentId) {
+      throw new Error("You are not authorized to add this card.");
     }
 
-    if (!answer.trim()) {
-      alert("Please enter an answer.");
-      return;
+    if (data.deckId !== deckId) {
+      throw new Error("Invalid flashcard deck.");
     }
-
-    setSavingCard(true);
 
     try {
-      const parsedTags = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean);
+      setSavingCard(true);
+      setError("");
 
-      const cardId = await FlashcardService.createCard({
-        deckId,
-        studentId: user.uid,
-        question: question.trim(),
-        answer: answer.trim(),
-        hint: hint.trim() || undefined,
-        tags:
-          parsedTags.length > 0
-            ? parsedTags
-            : undefined,
-        difficulty,
-      });
+      const cardId = await FlashcardService.createCard(data);
 
-      const newCard =
-        await FlashcardService.getCard(cardId);
+      const newCard = await FlashcardService.getCard(cardId);
 
       if (newCard) {
-        setCards((current) => [
-          ...current,
-          newCard,
-        ]);
+        setCards((current) => [...current, newCard]);
       }
 
       setDeck((current) =>
@@ -158,18 +188,21 @@ export default function FlashcardDeckPage() {
           : current
       );
 
-      closeAddCard();
+      setShowAddCard(false);
     } catch (error) {
-      console.error(
-        "Failed to create flashcard:",
-        error
-      );
+      console.error("Failed to create flashcard:", error);
 
-      alert("Failed to create flashcard.");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to create flashcard.");
     } finally {
       setSavingCard(false);
     }
   }
+
+  // =========================================================
+  // DELETE CARD
+  // =========================================================
 
   async function handleDeleteCard(cardId: string) {
     const confirmed = window.confirm(
@@ -179,37 +212,31 @@ export default function FlashcardDeckPage() {
     if (!confirmed) return;
 
     try {
-      await FlashcardService.deleteCard(
-        cardId,
-        deckId
-      );
+      setError("");
+
+      await FlashcardService.deleteCard(cardId, deckId);
 
       setCards((current) =>
-        current.filter(
-          (card) => card.id !== cardId
-        )
+        current.filter((card) => card.id !== cardId)
       );
 
       setDeck((current) =>
         current
           ? {
               ...current,
-              cardCount: Math.max(
-                0,
-                current.cardCount - 1
-              ),
+              cardCount: Math.max(0, current.cardCount - 1),
             }
           : current
       );
     } catch (error) {
-      console.error(
-        "Failed to delete flashcard:",
-        error
-      );
-
-      alert("Failed to delete flashcard.");
+      console.error("Failed to delete flashcard:", error);
+      setError("Failed to delete flashcard.");
     }
   }
+
+  // =========================================================
+  // DELETE DECK
+  // =========================================================
 
   async function handleDeleteDeck() {
     if (!deck) return;
@@ -220,22 +247,156 @@ export default function FlashcardDeckPage() {
 
     if (!confirmed) return;
 
-    setDeleting(true);
-
     try {
+      setDeleting(true);
+      setError("");
+
       await FlashcardService.deleteDeck(deck.id);
 
       router.push("/dashboard/flashcards");
     } catch (error) {
-      console.error(
-        "Failed to delete flashcard deck:",
-        error
-      );
+      console.error("Failed to delete flashcard deck:", error);
 
-      alert("Failed to delete flashcard deck.");
+      setError("Failed to delete flashcard deck.");
       setDeleting(false);
     }
   }
+
+  // =========================================================
+  // NORMALIZE ANSWER
+  // =========================================================
+
+  function normalizeAnswer(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  // =========================================================
+  // CHECK ANSWER
+  // =========================================================
+
+  function checkAnswer() {
+    if (!currentCard || !typedAnswer.trim()) {
+      return;
+    }
+
+    const userAnswer = normalizeAnswer(typedAnswer);
+    const correctAnswer = normalizeAnswer(currentCard.answer);
+
+    const isCorrect = userAnswer === correctAnswer;
+
+    setAnswerResult(isCorrect ? "correct" : "incorrect");
+    setShowAnswer(true);
+  }
+
+  // =========================================================
+  // START STUDY
+  // =========================================================
+
+  function startStudy() {
+    if (cards.length === 0) {
+      setError(
+        "Add at least one flashcard before starting study mode."
+      );
+      return;
+    }
+
+    setError("");
+    setStudyIndex(0);
+    setTimeLeft(STUDY_TIME);
+
+    setShowHint(false);
+    setShowAnswer(false);
+
+    setTypedAnswer("");
+    setAnswerResult(null);
+
+    setCorrectAnswers(0);
+    setIncorrectAnswers(0);
+
+    setStudyComplete(false);
+    setAnswering(false);
+
+    setIsStudying(true);
+  }
+
+  // =========================================================
+  // EXIT STUDY
+  // =========================================================
+
+  function exitStudy() {
+    setIsStudying(false);
+
+    setStudyIndex(0);
+    setTimeLeft(STUDY_TIME);
+
+    setShowHint(false);
+    setShowAnswer(false);
+
+    setTypedAnswer("");
+    setAnswerResult(null);
+
+    setStudyComplete(false);
+    setAnswering(false);
+  }
+
+  // =========================================================
+  // SAVE ANSWER + MOVE TO NEXT CARD
+  // =========================================================
+
+  async function handleAnswer(
+    result: "again" | "good"
+  ) {
+    if (!currentCard || answering) return;
+
+    try {
+      setAnswering(true);
+      setError("");
+
+      await FlashcardService.recordAnswer(
+        currentCard.id,
+        result
+      );
+
+      if (result === "good") {
+        setCorrectAnswers((current) => current + 1);
+      } else {
+        setIncorrectAnswers((current) => current + 1);
+      }
+
+      const nextIndex = studyIndex + 1;
+
+      if (nextIndex >= cards.length) {
+        setStudyComplete(true);
+        return;
+      }
+
+      setStudyIndex(nextIndex);
+
+      setTimeLeft(STUDY_TIME);
+
+      setShowHint(false);
+      setShowAnswer(false);
+
+      setTypedAnswer("");
+      setAnswerResult(null);
+    } catch (error) {
+      console.error("Failed to record answer:", error);
+
+      setError(
+        "Failed to save your answer. Please try again."
+      );
+    } finally {
+      setAnswering(false);
+    }
+  }
+
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
@@ -246,6 +407,10 @@ export default function FlashcardDeckPage() {
       </div>
     );
   }
+
+  // =========================================================
+  // DECK NOT FOUND
+  // =========================================================
 
   if (!deck) {
     return (
@@ -259,8 +424,8 @@ export default function FlashcardDeckPage() {
         </h2>
 
         <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
-          This flashcard deck does not exist or is no
-          longer available.
+          This flashcard deck does not exist or is no longer
+          available.
         </p>
 
         <button
@@ -275,6 +440,445 @@ export default function FlashcardDeckPage() {
       </div>
     );
   }
+
+  // =========================================================
+  // STUDY MODE
+  // =========================================================
+
+  if (isStudying) {
+    return (
+      <div className="min-h-[calc(100vh-3rem)]">
+        <div className="mx-auto max-w-4xl">
+          {/* STUDY HEADER */}
+
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={exitStudy}
+              className="inline-flex items-center gap-2 text-sm font-medium text-ink-secondary transition hover:text-lavender-dark dark:text-ink-secondary-dark"
+            >
+              <IconArrowLeft size={18} />
+              Exit Study
+            </button>
+
+            {!studyComplete && (
+              <div className="rounded-full bg-lavender/10 px-4 py-2 text-sm font-semibold text-lavender-dark">
+                {studyIndex + 1} / {cards.length}
+              </div>
+            )}
+          </div>
+
+          {/* ERROR */}
+
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+              {error}
+            </div>
+          )}
+
+          {/* =================================================
+              STUDY COMPLETE
+              ================================================= */}
+
+          {studyComplete ? (
+            <div className="card overflow-hidden bg-white p-8 text-center shadow-sm dark:bg-white md:p-12">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-lavender/10 text-lavender-dark">
+                <IconCheck size={40} />
+              </div>
+
+              <h1 className="text-3xl font-bold text-ink-primary">
+                Deck Complete!
+              </h1>
+
+              <p className="mt-3 text-ink-secondary">
+                Great job! You finished all {cards.length}{" "}
+                {cards.length === 1 ? "card" : "cards"}.
+              </p>
+
+              <div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-green-50 p-5">
+                  <div className="text-3xl font-bold text-green-600">
+                    {correctAnswers}
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-green-700">
+                    Correct
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-red-50 p-5">
+                  <div className="text-3xl font-bold text-red-600">
+                    {incorrectAnswers}
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-red-700">
+                    Incorrect
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="text-sm text-ink-secondary">
+                  Accuracy
+                </div>
+
+                <div className="mt-1 text-2xl font-bold text-ink-primary">
+                  {cards.length > 0
+                    ? Math.round(
+                        (correctAnswers / cards.length) * 100
+                      )
+                    : 0}
+                  %
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={startStudy}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-lavender px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  <IconRefresh size={18} />
+                  Study Again
+                </button>
+
+                <button
+                  type="button"
+                  onClick={exitStudy}
+                  className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-ink-primary transition hover:bg-gray-50"
+                >
+                  Back to Deck
+                </button>
+              </div>
+            </div>
+          ) : currentCard ? (
+            <>
+              {/* PROGRESS */}
+
+              <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-lavender transition-all duration-300"
+                  style={{
+                    width: `${
+                      ((studyIndex + 1) / cards.length) * 100
+                    }%`,
+                  }}
+                />
+              </div>
+
+              {/* TIMER */}
+
+              <div className="mb-6 flex justify-center">
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold ${
+                    timeLeft <= 5
+                      ? "bg-red-100 text-red-600"
+                      : "bg-lavender/10 text-lavender-dark"
+                  }`}
+                >
+                  <IconClock size={18} />
+
+                  {timeLeft}s
+                </div>
+              </div>
+
+              {/* FLASHCARD */}
+
+              <div className="card overflow-hidden bg-white shadow-sm dark:bg-white">
+                {/* QUESTION */}
+
+                <div className="p-7 md:p-10">
+                  <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-lavender-dark">
+                    Question
+                  </div>
+
+                  <h1 className="text-2xl font-bold leading-relaxed text-ink-primary md:text-3xl">
+                    {currentCard.question}
+                  </h1>
+
+                  {/* HINT */}
+
+                  {currentCard.hint && !showAnswer && (
+                    <div className="mt-8">
+                      {!showHint ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowHint(true)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-lavender/30 bg-lavender/5 px-4 py-2.5 text-sm font-semibold text-lavender-dark transition hover:bg-lavender/10"
+                        >
+                          <IconBulb size={18} />
+                          Show Hint
+                        </button>
+                      ) : (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                          <div className="flex items-start gap-3">
+                            <IconBulb
+                              size={20}
+                              className="mt-0.5 shrink-0 text-amber-600"
+                            />
+
+                            <div>
+                              <div className="text-sm font-semibold text-amber-800">
+                                Hint
+                              </div>
+
+                              <p className="mt-1 text-sm leading-relaxed text-amber-700">
+                                {currentCard.hint}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ANSWER RESULT */}
+
+                  {showAnswer && (
+                    <div className="mt-8 space-y-4">
+                      {/* CORRECT / INCORRECT MESSAGE */}
+
+                      {answerResult === "correct" && (
+                        <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+                          <div className="flex items-center gap-2 text-lg font-bold text-green-700">
+                            <IconCheck size={22} />
+                            Correct!
+                          </div>
+
+                          <p className="mt-2 text-sm text-green-700">
+                            Great job! Your answer matches the
+                            correct answer.
+                          </p>
+                        </div>
+                      )}
+
+                      {answerResult === "incorrect" && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                          <div className="flex items-center gap-2 text-lg font-bold text-red-700">
+                            <IconX size={22} />
+                            Incorrect
+                          </div>
+
+                          {timeLeft === 0 && (
+                            <p className="mt-2 text-sm text-red-700">
+                              Time is up. The correct answer is
+                              shown below.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* USER ANSWER */}
+
+                      {typedAnswer.trim() && (
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Your Answer
+                          </div>
+
+                          <p className="text-base leading-relaxed text-gray-900">
+                            {typedAnswer}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* CORRECT ANSWER */}
+
+                      <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-green-700">
+                          <IconEye size={16} />
+                          Correct Answer
+                        </div>
+
+                        <p className="text-base leading-relaxed text-green-900">
+                          {currentCard.answer}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ACTION AREA */}
+
+                <div className="border-t border-gray-100 bg-gray-50/80 p-6">
+                  {!showAnswer ? (
+                    <div className="space-y-4">
+                      {/* ANSWER INPUT */}
+
+                      <div>
+                        <label
+                          htmlFor="study-answer"
+                          className="mb-2 block text-sm font-semibold text-ink-primary"
+                        >
+                          Your Answer
+                        </label>
+
+                        <textarea
+                          id="study-answer"
+                          value={typedAnswer}
+                          onChange={(event) =>
+                            setTypedAnswer(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (
+                              event.key === "Enter" &&
+                              (event.ctrlKey || event.metaKey)
+                            ) {
+                              event.preventDefault();
+                              checkAnswer();
+                            }
+                          }}
+                          placeholder="Type your answer here..."
+                          rows={4}
+                          className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-lavender focus:ring-2 focus:ring-lavender/20"
+                        />
+
+                        <p className="mt-2 text-xs text-gray-500">
+                          Press Ctrl + Enter to check your answer.
+                        </p>
+                      </div>
+
+                      {/* CHECK ANSWER */}
+
+                      <button
+                        type="button"
+                        onClick={checkAnswer}
+                        disabled={!typedAnswer.trim()}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-lavender px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <IconCheck size={19} />
+                        Check Answer
+                      </button>
+
+                      {/* REVEAL ANSWER */}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAnswerResult("incorrect");
+                          setShowAnswer(true);
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-ink-secondary transition hover:bg-gray-50"
+                      >
+                        <IconEye size={18} />
+                        Reveal Answer
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* MANUAL RESULT SELECTION */}
+
+                      {answerResult === null && (
+                        <>
+                          <p className="text-center text-sm font-medium text-ink-secondary">
+                            How did you do?
+                          </p>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              disabled={answering}
+                              onClick={() =>
+                                handleAnswer("again")
+                              }
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <IconX size={19} />
+                              I Didn't Know
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={answering}
+                              onClick={() =>
+                                handleAnswer("good")
+                              }
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <IconCheck size={19} />
+                              I Knew It
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {/* AUTOMATIC RESULT */}
+
+                      {answerResult !== null && (
+                        <button
+                          type="button"
+                          disabled={answering}
+                          onClick={() =>
+                            handleAnswer(
+                              answerResult === "correct"
+                                ? "good"
+                                : "again"
+                            )
+                          }
+                          className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            answerResult === "correct"
+                              ? "bg-green-600 hover:bg-green-700"
+                              : "bg-lavender hover:opacity-90"
+                          }`}
+                        >
+                          {answering ? (
+                            "Saving..."
+                          ) : (
+                            <>
+                              <IconArrowLeft
+                                size={18}
+                                className="rotate-180"
+                              />
+
+                              {studyIndex + 1 === cards.length
+                                ? "Finish Deck"
+                                : "Next Card"}
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* STUDY STATS */}
+
+              <div className="mt-5 flex justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2 text-green-600">
+                  <IconCheck size={16} />
+                  {correctAnswers} correct
+                </div>
+
+                <div className="flex items-center gap-2 text-red-500">
+                  <IconX size={16} />
+                  {incorrectAnswers} incorrect
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="card bg-white p-8 text-center">
+              <p className="text-sm text-ink-secondary">
+                No flashcard available.
+              </p>
+
+              <button
+                type="button"
+                onClick={exitStudy}
+                className="mt-5 rounded-xl bg-lavender px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Back to Deck
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // NORMAL DECK VIEW
+  // =========================================================
 
   return (
     <div className="space-y-6">
@@ -309,18 +913,33 @@ export default function FlashcardDeckPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-surface-alt px-3 py-1 text-xs font-medium text-ink-secondary dark:bg-surface-alt-dark dark:text-ink-secondary-dark">
                 {cards.length}{" "}
-                {cards.length === 1
-                  ? "card"
-                  : "cards"}
+                {cards.length === 1 ? "card" : "cards"}
               </span>
             </div>
           </div>
 
+          {/* ACTION BUTTONS */}
+
           <div className="flex flex-wrap gap-2">
+            {cards.length > 0 && (
+              <button
+                type="button"
+                onClick={startStudy}
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+              >
+                <IconPlayerPlay size={18} />
+                Play
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => setShowAddCard(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-lavender px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+              onClick={() => {
+                setError("");
+                setShowAddCard(true);
+              }}
+              disabled={savingCard}
+              className="inline-flex items-center gap-2 rounded-xl bg-lavender px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <IconPlus size={18} />
               Add Card
@@ -333,184 +952,17 @@ export default function FlashcardDeckPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-400/30 dark:hover:bg-red-500/10"
             >
               <IconTrash size={18} />
-              {deleting
-                ? "Deleting..."
-                : "Delete Deck"}
+              {deleting ? "Deleting..." : "Delete Deck"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ADD CARD FORM */}
+      {/* ERROR */}
 
-      {showAddCard && (
-        <div className="card p-6 md:p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-ink-primary dark:text-ink-primary-dark">
-                Add Flashcard
-              </h2>
-
-              <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                Create a question and answer for this
-                deck.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={closeAddCard}
-              disabled={savingCard}
-              className="rounded-lg p-2 text-ink-secondary transition hover:bg-surface-alt dark:text-ink-secondary-dark dark:hover:bg-surface-alt-dark"
-              aria-label="Close"
-            >
-              <IconX size={20} />
-            </button>
-          </div>
-
-          <form
-            onSubmit={handleAddCard}
-            className="space-y-5"
-          >
-            <div>
-              <label
-                htmlFor="question"
-                className="mb-2 block text-sm font-medium text-ink-primary dark:text-ink-primary-dark"
-              >
-                Question
-              </label>
-
-              <textarea
-                id="question"
-                value={question}
-                onChange={(event) =>
-                  setQuestion(event.target.value)
-                }
-                placeholder="e.g. What is polymorphism in Java?"
-                rows={4}
-                className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender focus:ring-2 focus:ring-lavender/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="answer"
-                className="mb-2 block text-sm font-medium text-ink-primary dark:text-ink-primary-dark"
-              >
-                Answer
-              </label>
-
-              <textarea
-                id="answer"
-                value={answer}
-                onChange={(event) =>
-                  setAnswer(event.target.value)
-                }
-                placeholder="Write the answer..."
-                rows={5}
-                className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender focus:ring-2 focus:ring-lavender/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="hint"
-                className="mb-2 block text-sm font-medium text-ink-primary dark:text-ink-primary-dark"
-              >
-                Hint
-                <span className="ml-1 text-xs font-normal text-ink-secondary">
-                  (optional)
-                </span>
-              </label>
-
-              <textarea
-                id="hint"
-                value={hint}
-                onChange={(event) =>
-                  setHint(event.target.value)
-                }
-                placeholder="Give yourself a small clue..."
-                rows={3}
-                className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender focus:ring-2 focus:ring-lavender/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="tags"
-                  className="mb-2 block text-sm font-medium text-ink-primary dark:text-ink-primary-dark"
-                >
-                  Tags
-                  <span className="ml-1 text-xs font-normal text-ink-secondary">
-                    (optional)
-                  </span>
-                </label>
-
-                <input
-                  id="tags"
-                  value={tags}
-                  onChange={(event) =>
-                    setTags(event.target.value)
-                  }
-                  placeholder="java, oops, inheritance"
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender focus:ring-2 focus:ring-lavender/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                />
-
-                <p className="mt-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                  Separate tags with commas.
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="difficulty"
-                  className="mb-2 block text-sm font-medium text-ink-primary dark:text-ink-primary-dark"
-                >
-                  Difficulty
-                </label>
-
-                <select
-                  id="difficulty"
-                  value={difficulty}
-                  onChange={(event) =>
-                    setDifficulty(
-                      event.target
-                        .value as FlashcardDifficulty
-                    )
-                  }
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink-primary outline-none transition focus:border-lavender focus:ring-2 focus:ring-lavender/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                >
-                  <option value="new">New</option>
-                  <option value="again">Again</option>
-                  <option value="hard">Hard</option>
-                  <option value="good">Good</option>
-                  <option value="easy">Easy</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-700">
-              <button
-                type="button"
-                onClick={closeAddCard}
-                disabled={savingCard}
-                className="rounded-xl border border-zinc-200 px-5 py-2.5 text-sm font-medium text-ink-secondary transition hover:bg-surface-alt disabled:opacity-50 dark:border-zinc-700 dark:text-ink-secondary-dark dark:hover:bg-surface-alt-dark"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={savingCard}
-                className="rounded-xl bg-lavender px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {savingCard
-                  ? "Saving..."
-                  : "Save Flashcard"}
-              </button>
-            </div>
-          </form>
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          {error}
         </div>
       )}
 
@@ -527,13 +979,16 @@ export default function FlashcardDeckPage() {
           </h2>
 
           <p className="mt-2 max-w-md text-sm text-ink-secondary dark:text-ink-secondary-dark">
-            This deck is empty. Add your first flashcard
-            to start studying.
+            This deck is empty. Add your first flashcard to
+            start studying.
           </p>
 
           <button
             type="button"
-            onClick={() => setShowAddCard(true)}
+            onClick={() => {
+              setError("");
+              setShowAddCard(true);
+            }}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-lavender px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           >
             <IconPlus size={18} />
@@ -541,79 +996,24 @@ export default function FlashcardDeckPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {cards.map((card, index) => (
-            <div
-              key={card.id}
-              className="card p-6"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 gap-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-lavender/10 text-sm font-semibold text-lavender-dark">
-                    {index + 1}
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
-                      Question
-                    </p>
-
-                    <p className="mt-2 whitespace-pre-wrap text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
-                      {card.question}
-                    </p>
-
-                    <p className="mt-5 text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
-                      Answer
-                    </p>
-
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                      {card.answer}
-                    </p>
-
-                    {card.hint && (
-                      <>
-                        <p className="mt-5 text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
-                          Hint
-                        </p>
-
-                        <p className="mt-2 text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                          {card.hint}
-                        </p>
-                      </>
-                    )}
-
-                    {card.tags &&
-                      card.tags.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {card.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-surface-alt px-2.5 py-1 text-xs text-ink-secondary dark:bg-surface-alt-dark dark:text-ink-secondary-dark"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDeleteCard(card.id)
-                  }
-                  className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10"
-                  title="Delete card"
-                  aria-label="Delete card"
-                >
-                  <IconTrash size={18} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <FlashcardList
+          cards={cards}
+          onDelete={handleDeleteCard}
+        />
       )}
+
+      {/* CREATE FLASHCARD MODAL */}
+
+      <CreateFlashcardModal
+        isOpen={showAddCard}
+        onClose={() => {
+          if (savingCard) return;
+          setShowAddCard(false);
+        }}
+        onCreate={handleAddCard}
+        deckId={deckId}
+        studentId={deck.studentId}
+      />
     </div>
   );
 }

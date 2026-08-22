@@ -1,81 +1,99 @@
 "use client";
 
+import { IconTrash } from "@tabler/icons-react";
 import type { Flashcard } from "@/types/flashcard";
 
 interface FlashcardCardProps {
   card: Flashcard;
   index: number;
+  onDelete?: (cardId: string) => void;
 }
 
 export default function FlashcardCard({
   card,
   index,
+  onDelete,
 }: FlashcardCardProps) {
   return (
-    <div className="rounded-xl border p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          Card {index + 1}
-        </span>
+    <div className="card p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-lavender/10 text-sm font-semibold text-lavender-dark">
+            {index + 1}
+          </div>
 
-        <span className="rounded-full bg-muted px-2.5 py-1 text-xs capitalize">
-          {card.difficulty}
-        </span>
-      </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
+              Question
+            </p>
 
-      <div>
-        <p className="text-sm font-medium">
-          Question
-        </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm font-semibold text-ink-primary dark:text-ink-primary-dark">
+              {card.question}
+            </p>
 
-        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-          {card.question}
-        </p>
-      </div>
+            <p className="mt-5 text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
+              Answer
+            </p>
 
-      <div className="mt-5">
-        <p className="text-sm font-medium">
-          Answer
-        </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-ink-secondary dark:text-ink-secondary-dark">
+              {card.answer}
+            </p>
 
-        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-          {card.answer}
-        </p>
-      </div>
+            {card.hint && (
+              <div className="mt-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-secondary dark:text-ink-secondary-dark">
+                  Hint
+                </p>
 
-      {card.hint && (
-        <div className="mt-5 rounded-lg bg-muted/50 p-3">
-          <p className="text-xs font-medium">
-            Hint
-          </p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-ink-secondary dark:text-ink-secondary-dark">
+                  {card.hint}
+                </p>
+              </div>
+            )}
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            {card.hint}
-          </p>
+            {card.tags && card.tags.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {card.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-surface-alt px-2.5 py-1 text-xs text-ink-secondary dark:bg-surface-alt-dark dark:text-ink-secondary-dark"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-wrap gap-4 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+              <span>
+                Difficulty:{" "}
+                <span className="capitalize">
+                  {card.difficulty}
+                </span>
+              </span>
+
+              <span>
+                Correct: {card.correctCount}
+              </span>
+
+              <span>
+                Incorrect: {card.incorrectCount}
+              </span>
+            </div>
+          </div>
         </div>
-      )}
 
-      {card.tags && card.tags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {card.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-5 flex gap-4 border-t pt-4 text-xs text-muted-foreground">
-        <span>
-          Correct: {card.correctCount}
-        </span>
-
-        <span>
-          Incorrect: {card.incorrectCount}
-        </span>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete(card.id)}
+            className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10"
+            title="Delete card"
+            aria-label="Delete card"
+          >
+            <IconTrash size={18} />
+          </button>
+        )}
       </div>
     </div>
   );
