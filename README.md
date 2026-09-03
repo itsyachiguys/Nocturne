@@ -69,10 +69,10 @@ Nocturne/
 - [x] Team Collaboration Setup
 - [x] Git Workflow Initialized
 - [x] Project Structure Created
-- [ ] Frontend Setup
-- [ ] Backend Setup
-- [ ] Database Integration
-- [ ] Authentication System
+- [x] Frontend Setup
+- [x] Backend Setup
+- [x] Database Integration
+- [x] Authentication System
 - [ ] Dashboard Development
 - [ ] Mobile Application
 
@@ -247,4 +247,3 @@ git branch -D feature/login
 git push origin --delete feature/login 
 # deleta a remote branch 
 git push origin --delete feature/login 
-
