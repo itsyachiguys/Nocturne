@@ -1,5 +1,7 @@
 "use client";
 
+import { onAuthStateChanged } from "firebase/auth";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -31,6 +33,167 @@ import FlashcardList from "@/components/flashcards/FlashcardList";
 
 const STUDY_TIME = 30;
 
+const STOP_WORDS = new Set([
+  "a", "an", "and", "or", "the", "of", "to", "is", "are",
+  "in", "on", "for", "with", "as", "by", "it", "its",
+  "that", "this", "these", "those",
+]);
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Splits into key words; filler words are ignored unless nothing else is left.
+function toTokens(value: string) {
+  const all = normalizeText(value).split(" ").filter(Boolean);
+  const meaningful = all.filter((token) => !STOP_WORDS.has(token));
+  return meaningful.length > 0 ? meaningful : all;
+}
+
+function editDistance(a: string, b: string) {
+  const dp = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0)
+  );
+
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1, // deletion
+        dp[i][j - 1] + 1, // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      );
+
+      // swapped neighbouring letters count as one mistake
+      if (
+        i > 1 &&
+        j > 1 &&
+        a[i - 1] === b[j - 2] &&
+        a[i - 2] === b[j - 1]
+      ) {
+        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+      }
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+// Allows 1 typo in words of 5+ letters, 2 typos in words of 9+ letters.
+//function tokensMatch(a: string, b: string) {
+  //if (a === b) return true;
+
+  //const longest = Math.max(a.length, b.length);
+  //const allowed = longest >= 9 ? 2 : longest >= 5 ? 1 : 0;
+
+  //return allowed > 0 && editDistance(a, b) <= allowed;
+//}
+
+type MatchKind = "exact" | "typo" | "short" | null;
+
+type TypoHint = {
+  typed: string;
+  expected: string;
+  kind: "typo" | "short";
+};
+
+function getMatchKind(a: string, b: string): MatchKind {
+  if (a === b) return "exact";
+
+  const longest = Math.max(a.length, b.length);
+  const shortest = Math.min(a.length, b.length);
+
+  // Misspelling: 1 mistake for 5+ letters, 2 for 9+ letters
+  const allowed = longest >= 9 ? 2 : longest >= 5 ? 1 : 0;
+
+  if (allowed > 0 && editDistance(a, b) <= allowed) return "typo";
+
+  // Shortened form: struct -> structure, algos -> algorithm
+  if (shortest >= 4) {
+    let prefix = 0;
+
+    while (prefix < shortest && a[prefix] === b[prefix]) {
+      prefix++;
+    }
+
+    if (prefix >= 4 && prefix / shortest >= 0.8) return "short";
+  }
+
+  return null;
+}
+
+type TypoHint = { typed: string; expected: string };
+
+type AnswerCheck = { correct: boolean; typos: TypoHint[] };
+
+type AnswerCheck = { correct: boolean; typos: TypoHint[] };
+
+function checkAnswerMatch(
+  userInput: string,
+  correctAnswer: string
+): AnswerCheck {
+  if (normalizeText(userInput) === normalizeText(correctAnswer)) {
+    return { correct: true, typos: [] };
+  }
+
+  const user = toTokens(userInput);
+  const correct = toTokens(correctAnswer);
+
+  if (user.length === 0 || correct.length === 0) {
+    return { correct: false, typos: [] };
+  }
+
+  const used = new Set<number>();
+  const hints: TypoHint[] = [];
+  let matched = 0;
+
+  for (const word of correct) {
+    let foundIndex = -1;
+    let foundKind: MatchKind = null;
+
+    for (let i = 0; i < user.length; i++) {
+      if (used.has(i)) continue;
+
+      const kind = getMatchKind(user[i], word);
+
+      if (kind) {
+        foundIndex = i;
+        foundKind = kind;
+        break;
+      }
+    }
+
+    if (foundIndex !== -1) {
+      used.add(foundIndex);
+      matched++;
+
+      if (foundKind === "typo" || foundKind === "short") {
+        hints.push({
+          typed: user[foundIndex],
+          expected: word,
+          kind: foundKind,
+        });
+      }
+    }
+  }
+
+  const recall = matched / correct.length;
+  const precision = matched / user.length;
+
+  return {
+    correct: recall >= 0.8 && precision >= 0.4,
+    typos: hints,
+  };
+}
+
 export default function FlashcardDeckPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,6 +224,7 @@ export default function FlashcardDeckPage() {
   const [answerResult, setAnswerResult] = useState<
     "correct" | "incorrect" | null
   >(null);
+  const [typoHints, setTypoHints] = useState<TypoHint[]>([]);
 
   const [answering, setAnswering] = useState(false);
 
@@ -73,31 +237,36 @@ export default function FlashcardDeckPage() {
   // =========================================================
   // LOAD DECK
   // =========================================================
-
   useEffect(() => {
+    if (!deckId) return;
+  
     let cancelled = false;
-
-    async function loadDeck() {
+  
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
       try {
-        const user = auth.currentUser;
-
-        if (!user) {
-          router.push("/login");
-          return;
-        }
-
-        const [deckData, cardData] = await Promise.all([
-          FlashcardService.getDeck(deckId),
-          FlashcardService.getCards(deckId),
-        ]);
-
+        const deckData = await FlashcardService.getDeck(deckId).catch((e) => {
+          console.error("getDeck failed:", e);
+          throw e;
+        });
+      
+        const cardData = await FlashcardService.getCards(deckId, user.uid).catch(
+          (e) => {
+            console.error("getCards failed:", e);
+            throw e;
+          }
+        );
+      
         if (cancelled) return;
-
+      
         setDeck(deckData);
         setCards(cardData);
-      } catch (error) {
-        console.error("Failed to load flashcard deck:", error);
-
+      } catch (err) {
+        console.error("Failed to load flashcard deck:", err);
+  
         if (!cancelled) {
           setError("Failed to load flashcard deck.");
         }
@@ -106,14 +275,11 @@ export default function FlashcardDeckPage() {
           setLoading(false);
         }
       }
-    }
-
-    if (deckId) {
-      loadDeck();
-    }
-
+    });
+  
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, [deckId, router]);
 
@@ -251,7 +417,7 @@ export default function FlashcardDeckPage() {
       setDeleting(true);
       setError("");
 
-      await FlashcardService.deleteDeck(deck.id);
+      await FlashcardService.deleteDeck(deck.id, deck.studentId);
 
       router.push("/dashboard/flashcards");
     } catch (error) {
@@ -266,13 +432,13 @@ export default function FlashcardDeckPage() {
   // NORMALIZE ANSWER
   // =========================================================
 
-  function normalizeAnswer(value: string) {
-    return value
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s]/g, "")
-      .replace(/\s+/g, " ");
-  }
+  //function normalizeAnswer(value: string) {
+    //return value
+      //.toLowerCase()
+      //.trim()
+      //.replace(/[^\w\s]/g, "")
+      //.replace(/\s+/g, " ");
+  //}
 
   // =========================================================
   // CHECK ANSWER
@@ -282,13 +448,11 @@ export default function FlashcardDeckPage() {
     if (!currentCard || !typedAnswer.trim()) {
       return;
     }
-
-    const userAnswer = normalizeAnswer(typedAnswer);
-    const correctAnswer = normalizeAnswer(currentCard.answer);
-
-    const isCorrect = userAnswer === correctAnswer;
-
-    setAnswerResult(isCorrect ? "correct" : "incorrect");
+  
+    const result = checkAnswerMatch(typedAnswer, currentCard.answer);
+  
+    setAnswerResult(result.correct ? "correct" : "incorrect");
+    setTypoHints(result.typos);
     setShowAnswer(true);
   }
 
@@ -313,6 +477,7 @@ export default function FlashcardDeckPage() {
 
     setTypedAnswer("");
     setAnswerResult(null);
+    setTypoHints([]);
 
     setCorrectAnswers(0);
     setIncorrectAnswers(0);
@@ -338,6 +503,7 @@ export default function FlashcardDeckPage() {
 
     setTypedAnswer("");
     setAnswerResult(null);
+    setTypoHints([]);
 
     setStudyComplete(false);
     setAnswering(false);
@@ -383,6 +549,7 @@ export default function FlashcardDeckPage() {
 
       setTypedAnswer("");
       setAnswerResult(null);
+      setTypoHints([]);
     } catch (error) {
       console.error("Failed to record answer:", error);
 
@@ -665,6 +832,28 @@ export default function FlashcardDeckPage() {
                               shown below.
                             </p>
                           )}
+                        </div>
+                      )}
+                      {/* TYPO HINTS */}
+                      {typoHints.length > 0 && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                          <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                            <IconBulb size={18} />
+                            Accepted, but check these
+                          </div>
+
+                          <ul className="mt-2 space-y-1 text-sm text-amber-700">
+                            {typoHints.map((hint, index) => (
+                              <li key={index}>
+                                <span className="font-medium">
+                                  {hint.kind === "typo" ? "Spelling: " : "Short form: "}
+                                </span>
+                                <span className="line-through">{hint.typed}</span>
+                                {" → "}
+                                <span className="font-semibold">{hint.expected}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
 
