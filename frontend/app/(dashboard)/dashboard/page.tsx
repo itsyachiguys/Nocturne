@@ -1497,7 +1497,7 @@ export default function DashboardPage() {
 
       {/* ---------------- Hero: today's rings ---------------- */}
       <Reveal show={ready} className="mb-5">
-        <section className="relative overflow-hidden rounded-3xl bg-brand-gradient p-6 text-white shadow-soft dark:bg-none dark:bg-gradient-to-br dark:from-[#4a3fb0] dark:via-[#6d56d1] dark:to-[#9b78e8] dark:shadow-[0_24px_60px_-24px_rgba(124,107,214,0.65)] sm:p-7">
+        <section className="relative overflow-hidden rounded-3xl bg-brand-gradient p-6 text-white shadow-soft dark:bg-none dark:from-[#4a3fb0] dark:via-[#6d56d1] dark:to-[#9b78e8] dark:shadow-[0_24px_60px_-24px_rgba(124,107,214,0.65)] sm:p-7">
           {/* Soft highlight + decorative circles (plain gradients, cheap to paint) */}
           <div
             aria-hidden

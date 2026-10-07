@@ -130,10 +130,6 @@ function getMatchKind(a: string, b: string): MatchKind {
   return null;
 }
 
-type TypoHint = { typed: string; expected: string };
-
-type AnswerCheck = { correct: boolean; typos: TypoHint[] };
-
 type AnswerCheck = { correct: boolean; typos: TypoHint[] };
 
 function checkAnswerMatch(

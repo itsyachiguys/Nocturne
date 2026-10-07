@@ -10,6 +10,8 @@ import CreateNoteModal from "@/components/notes/CreateNoteModal";
 import { Note, NoteCategory } from "@/types/note";
 import { NoteService } from "@/services/note.service";
 
+import AiStudyTools from "@/components/notes/AiStudyTools";
+
 const categories: ("All" | NoteCategory)[] = [
   "All",
   "Academic",
@@ -93,8 +95,14 @@ export default function NotesPage() {
         title="Notes"
         subtitle="Organize your academic and personal notes"
       />
-
+       
       <div className="space-y-6">
+        </div> {/* end of stats grid */}
+
+        <AiStudyTools />
+
+        <div className="card p-6"> {/* notes container */}
+        
 
         {/* =====================================================
             NOTE STATISTICS
