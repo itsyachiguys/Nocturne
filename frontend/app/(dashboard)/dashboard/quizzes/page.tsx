@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   IconAlertTriangle,
-  IconPlus,
+  IconSparkles,
   IconTrash,
 } from "@tabler/icons-react";
 import { PageHeader } from "@/components/PageHeader";
-import { Subject, SUBJECTS } from "@/lib/academic-data";
-import { useUid } from "@/lib/use-uid";
+import { SUBJECTS } from "@/lib/academic-data";
 import {
   computeWeakTopics,
   createQuiz,
@@ -20,12 +20,14 @@ import {
   type Difficulty,
   type Quiz,
   type QuizAttempt,
+  type Subject,
 } from "@/lib/quizzes";
 
-const inputClass =
+const FIELD =
   "mt-1 w-full rounded-2xl border border-line bg-surface-bg px-4 py-3 text-sm focus:border-lavender dark:border-line-dark dark:bg-surface-bg-dark";
-const labelClass =
+const LABEL =
   "text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark";
+const MUTED = "text-sm text-ink-secondary dark:text-ink-secondary-dark";
 
 function scoreColor(score: number) {
   if (score >= 80) return "text-mint";
@@ -33,88 +35,120 @@ function scoreColor(score: number) {
   return "text-coral";
 }
 
+// Rejects if the promise takes too long (e.g. Firestore is offline and the write hangs).
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
+
+// undefined = auth still loading, null = signed out, string = uid.
+// Swap this for your own AuthContext hook if you have one.
+function useUid() {
+  const [uid, setUid] = useState<string | null | undefined>(undefined);
+  useEffect(
+    () => onAuthStateChanged(getAuth(), (u) => setUid(u?.uid ?? null)),
+    []
+  );
+  return uid;
+}
+
 export default function QuizzesPage() {
   const router = useRouter();
-  const { uid, loading: authLoading } = useUid();
+  const uid = useUid();
 
+  // Same subject list the Subjects section uses.
+  const [subjects] = useState<Subject[]>(
+    SUBJECTS.map((s) => ({ id: s.id, name: s.name }))
+  );
   const [quizzes, setQuizzes] = useState<Quiz[] | null>(null);
   const [attempts, setAttempts] = useState<QuizAttempt[] | null>(null);
-  const [loadError, setLoadError] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
-  
-  // Create form
   const [title, setTitle] = useState("");
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [subjectId, setSubjectId] = useState("");
+  const [subjectId, setSubjectId] = useState(SUBJECTS[0]?.id ?? "");
   const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
-  const [timerMinutes, setTimerMinutes] = useState(15);
+  const [timer, setTimer] = useState("15");
   const [creating, setCreating] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
 
+  // Load quizzes and attempts once we know who the user is.
   useEffect(() => {
     if (!uid) return;
-    return subscribeSubjects(
-      uid,
-      (list) => {
-        setSubjects(list);
-        // keep the selection valid if it was deleted or not set yet
-        setSubjectId((cur) =>
-          list.some((s) => s.id === cur) ? cur : list[0]?.id ?? ""
-        );
-      },
-      (e) => console.error("subscribeSubjects", e)
-    );
-  }, [uid]);
-  useEffect(() => {
-    if (!uid) return;
-    const onError = () =>
-      setLoadError("Couldn't load your quizzes. Check your connection and permissions.");
-    const unsubQuizzes = subscribeQuizzes(uid, setQuizzes, onError);
-    const unsubAttempts = subscribeAttempts(uid, setAttempts, onError);
-    return () => {
-      unsubQuizzes();
-      unsubAttempts();
+    const onErr = (label: string) => (e: Error) => {
+      console.error(label, e);
+      setLoadError(true);
     };
+    const unsubs = [
+      subscribeQuizzes(
+        uid,
+        (list) => {
+          setQuizzes(list);
+          setLoadError(false);
+        },
+        onErr("subscribeQuizzes")
+      ),
+      subscribeAttempts(uid, setAttempts, onErr("subscribeAttempts")),
+    ];
+    return () => unsubs.forEach((u) => u());
   }, [uid]);
-
-  const weakTopics = useMemo(
-    () => computeWeakTopics(attempts ?? []),
-    [attempts]
-  );
 
   const subjectName = (id: string) =>
-    SUBJECTS.find((s) => s.id === id)?.name ?? "No subject";
+    subjects.find((s) => s.id === id)?.name ?? "Unknown subject";
 
   async function handleCreate() {
-    if (!uid) return;
-    if (!title.trim()) return setFormError("Give the quiz a title.");
-    const minutes = Math.min(180, Math.max(0, Math.floor(timerMinutes) || 0));
-
+    console.log("create clicked", { uid, subjectId, title });
+    if (!uid || !subjectId) return;
+    const name = title.trim();
+    if (!name) {
+      setCreateError("Give your quiz a title.");
+      return;
+    }
+    const minutes = Math.max(0, Math.floor(Number(timer) || 0));
     setCreating(true);
-    setFormError("");
+    setCreateError(null);
     try {
-      const id = await createQuiz(uid, {
-        title: title.trim(),
-        subjectId,
-        difficulty,
-        timerMinutes: minutes,
-      });
+      const id = await withTimeout(
+        createQuiz(uid, {
+          title: name,
+          subjectId,
+          difficulty,
+          timerMinutes: minutes,
+        }),
+        15000
+      );
       router.push(`/dashboard/quizzes/${id}`);
-    } catch {
-      setFormError("Couldn't create the quiz. Try again.");
+    } catch (e) {
+      console.error("createQuiz", e);
+      setCreateError("Couldn't create the quiz. Try again.");
+    } finally {
       setCreating(false);
     }
   }
 
-  async function handleDelete(quiz: Quiz) {
+  async function handleDelete(q: Quiz) {
     if (!uid) return;
-    if (!window.confirm(`Delete "${quiz.title}" and all its questions?`)) return;
+    if (!window.confirm(`Delete "${q.title}" and all its questions?`)) return;
     try {
-      await deleteQuiz(uid, quiz.id);
-    } catch {
-      setLoadError("Couldn't delete that quiz. Try again.");
+      await deleteQuiz(uid, q.id);
+    } catch (e) {
+      console.error("deleteQuiz", e);
+      setLoadError(true);
     }
   }
+
+  const weakTopics = attempts ? computeWeakTopics(attempts) : [];
+  const canCreate = !!uid && !!subjectId && !creating;
 
   return (
     <>
@@ -123,12 +157,10 @@ export default function QuizzesPage() {
         subtitle="Build your own quizzes, take them, and track your results"
       />
 
-      {!authLoading && !uid && (
-        <p className="mb-4 text-sm text-coral">Sign in to use quizzes.</p>
-      )}
       {loadError && (
-        <p role="alert" className="mb-4 text-sm text-coral">
-          {loadError}
+        <p className="mb-4 text-sm text-coral">
+          Couldn&apos;t load your quizzes. Check your connection and
+          permissions.
         </p>
       )}
 
@@ -142,36 +174,45 @@ export default function QuizzesPage() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <label className="block sm:col-span-2">
-                <span className={labelClass}>Title</span>
+                <span className={LABEL}>Title</span>
                 <input
+                  name="title"
+                  type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={inputClass}
-                  placeholder="e.g. Arrays and linked lists"
+                  placeholder="e.g. Data Structures"
+                  className={FIELD}
                 />
               </label>
 
               <label className="block">
-                <span className={labelClass}>Subject</span>
+                <span className={LABEL}>Subject</span>
                 <select
+                  name="subject"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  className={inputClass}
+                  disabled={subjects.length === 0}
+                  className={FIELD}
                 >
-                  {SUBJECTS.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
+                  {subjects.length === 0 ? (
+                    <option value="">No subjects yet</option>
+                  ) : (
+                    subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </label>
 
               <label className="block">
-                <span className={labelClass}>Difficulty</span>
+                <span className={LABEL}>Difficulty</span>
                 <select
+                  name="difficulty"
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                  className={inputClass}
+                  className={FIELD}
                 >
                   <option value="Easy">Easy</option>
                   <option value="Medium">Medium</option>
@@ -180,34 +221,35 @@ export default function QuizzesPage() {
               </label>
 
               <label className="block sm:col-span-2">
-                <span className={labelClass}>
-                  Timer (minutes, 0 for no timer)
-                </span>
+                <span className={LABEL}>Timer (minutes, 0 for no timer)</span>
                 <input
+                  name="timer"
                   type="number"
                   min={0}
-                  max={180}
-                  value={timerMinutes}
-                  onChange={(e) => setTimerMinutes(Number(e.target.value))}
-                  className={inputClass}
+                  value={timer}
+                  onChange={(e) => setTimer(e.target.value)}
+                  className={FIELD}
                 />
               </label>
             </div>
 
-            {formError && (
-              <p role="alert" className="mt-4 text-sm text-coral">
-                {formError}
+            {subjects.length === 0 && uid && (
+              <p className={`mt-4 ${MUTED}`}>
+                Add a subject in the Subjects section first.
               </p>
+            )}
+            {createError && (
+              <p className="mt-4 text-sm text-coral">{createError}</p>
             )}
 
             <button
               type="button"
               onClick={handleCreate}
-              disabled={creating || !uid}
-              className="btn-primary mt-6 flex w-full items-center justify-center gap-2 py-3"
+              disabled={!canCreate}
+              className="btn-primary mt-6 flex w-full items-center justify-center gap-2 py-3 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <IconPlus size={18} />
-              {creating ? "Creating…" : "Create quiz and add questions"}
+              <IconSparkles size={18} />
+              {creating ? "Creating..." : "Create quiz and add questions"}
             </button>
           </div>
 
@@ -218,60 +260,54 @@ export default function QuizzesPage() {
             </h4>
 
             {quizzes === null ? (
-              <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                Loading…
-              </p>
+              <p className={MUTED}>{loadError ? "Unavailable." : "Loading..."}</p>
             ) : quizzes.length === 0 ? (
-              <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                No quizzes yet. Create one above, then add your questions.
-              </p>
+              <p className={MUTED}>No quizzes yet. Create your first one above.</p>
             ) : (
               <div className="divide-y divide-line dark:divide-line-dark">
-                {quizzes.map((quiz) => (
+                {quizzes.map((q) => (
                   <div
-                    key={quiz.id}
-                    className="flex items-center justify-between gap-4 py-4"
+                    key={q.id}
+                    className="flex flex-wrap items-center justify-between gap-3 py-4"
                   >
-                    <Link
-                      href={`/dashboard/quizzes/${quiz.id}`}
-                      className="min-w-0 flex-1"
-                    >
-                      <p className="truncate font-medium text-ink-primary dark:text-ink-primary-dark">
-                        {quiz.title}
+                    <div>
+                      <p className="font-medium text-ink-primary dark:text-ink-primary-dark">
+                        {q.title}
                       </p>
                       <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                        {subjectName(quiz.subjectId)} • {quiz.difficulty} •{" "}
-                        {quiz.questionCount}{" "}
-                        {quiz.questionCount === 1 ? "question" : "questions"}
-                        {quiz.timerMinutes > 0
-                          ? ` • ${quiz.timerMinutes} min`
-                          : ""}
+                        {subjectName(q.subjectId)} • {q.difficulty} •{" "}
+                        {q.questionCount} question
+                        {q.questionCount === 1 ? "" : "s"} •{" "}
+                        {q.timerMinutes > 0 ? `${q.timerMinutes} min` : "No timer"}
                       </p>
-                    </Link>
+                    </div>
 
-                    <div className="flex items-center gap-3">
-                      {quiz.questionCount > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/quizzes/${q.id}`}
+                        className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold dark:border-line-dark"
+                      >
+                        Edit
+                      </Link>
+                      {q.questionCount > 0 ? (
                         <Link
-                          href={`/dashboard/quizzes/${quiz.id}/take`}
-                          className="btn-primary px-4 py-2 text-sm"
+                          href={`/dashboard/quizzes/${q.id}/take`}
+                          className="btn-primary px-3 py-1.5 text-xs"
                         >
-                          Start
+                          Take
                         </Link>
                       ) : (
-                        <Link
-                          href={`/dashboard/quizzes/${quiz.id}`}
-                          className="rounded-2xl border border-line px-4 py-2 text-sm font-medium text-ink-primary dark:border-line-dark dark:text-ink-primary-dark"
-                        >
-                          Add questions
-                        </Link>
+                        <span className="px-3 py-1.5 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                          Add questions to take
+                        </span>
                       )}
                       <button
                         type="button"
-                        onClick={() => handleDelete(quiz)}
-                        aria-label={`Delete ${quiz.title}`}
-                        className="text-ink-secondary hover:text-coral dark:text-ink-secondary-dark"
+                        onClick={() => handleDelete(q)}
+                        aria-label={`Delete ${q.title}`}
+                        className="rounded-xl p-2 text-coral hover:bg-coral/10"
                       >
-                        <IconTrash size={18} />
+                        <IconTrash size={16} />
                       </button>
                     </div>
                   </div>
@@ -287,13 +323,9 @@ export default function QuizzesPage() {
             </h4>
 
             {attempts === null ? (
-              <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                Loading…
-              </p>
+              <p className={MUTED}>{loadError ? "Unavailable." : "Loading..."}</p>
             ) : attempts.length === 0 ? (
-              <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
-                Your finished quizzes will show up here.
-              </p>
+              <p className={MUTED}>No attempts yet. Take a quiz to see results here.</p>
             ) : (
               <div className="divide-y divide-line dark:divide-line-dark">
                 {attempts.map((a) => (
@@ -307,8 +339,10 @@ export default function QuizzesPage() {
                       </p>
                       <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                         {subjectName(a.subjectId)} •{" "}
-                        {a.completedAt?.toLocaleDateString() ?? "Just now"} •{" "}
-                        {a.correctCount}/{a.totalCount} correct
+                        {a.completedAt
+                          ? a.completedAt.toLocaleDateString()
+                          : "Just now"}{" "}
+                        • {a.correctCount}/{a.totalCount} correct
                       </p>
                     </div>
                     <span
@@ -316,7 +350,7 @@ export default function QuizzesPage() {
                         a.score
                       )}`}
                     >
-                      {a.score}%
+                      {Math.round(a.score)}%
                     </span>
                   </div>
                 ))}
@@ -333,9 +367,9 @@ export default function QuizzesPage() {
           </h4>
 
           {weakTopics.length === 0 ? (
-            <p className="text-sm text-ink-secondary dark:text-ink-secondary-dark">
-              Nothing flagged yet. Add a topic to your questions and take a
-              few quizzes to see where you need practice.
+            <p className={MUTED}>
+              Nothing flagged yet. Add a topic to your questions and take a few
+              quizzes to see where you need practice.
             </p>
           ) : (
             <div className="flex flex-col gap-3">
