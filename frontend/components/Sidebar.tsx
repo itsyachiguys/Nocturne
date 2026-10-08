@@ -60,7 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Notes", href: "/dashboard/notes", icon: IconNotes },
       { label: "Flashcards", href: "/dashboard/flashcards", icon: IconCards },
       { label: "Quizzes", href: "/dashboard/quizzes", icon: IconHelpCircle },
-      { label: "Mock Exams", href: "/dashboard/mock-exams", icon: IconClipboardCheck },
+      //{ label: "Mock Exams", href: "/dashboard/mock-exams", icon: IconClipboardCheck },
     ],
   },
   {

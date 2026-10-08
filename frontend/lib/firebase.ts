@@ -21,7 +21,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 // Firestore "channel" connection caused by QUIC / extensions / certain
 // networks interfering with the default WebChannel transport.
 export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
+  experimentalForceLongPolling: true,
 });
 
 export const auth = getAuth(app);

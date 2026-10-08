@@ -15,12 +15,35 @@ import { FirebaseError } from "firebase/app";
 import { AuthPanel } from "@/components/AuthPanel";
 import { AuthInput } from "@/components/AuthInput";
 import { AuthService } from "@/services/auth.service";
+import { auth } from "@/lib/firebase";
+import { ensureUserProfile, hasPassword } from "@/lib/authHelpers";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Runs after ANY successful sign-in (email or Google).
+  // 1. Makes sure users/{uid} exists in Firestore
+  // 2. Sends users without a password to /set-password, everyone else to /dashboard
+  async function routeAfterLogin() {
+    const user = auth.currentUser;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      await ensureUserProfile(user);
+    } catch (e) {
+      // Don't block login if the profile write fails; just log it.
+      console.error("ensureUserProfile failed:", e);
+    }
+
+    router.replace(hasPassword(user) ? "/dashboard" : "/set-password");
+  }
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -32,20 +55,22 @@ export default function LoginPage() {
 
     const formData = new FormData(event.currentTarget);
 
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim().toLowerCase();
     const password = formData.get("password") as string;
 
     try {
       await AuthService.login(email, password);
 
-      router.push("/dashboard");
+      await routeAfterLogin();
     } catch (err) {
       if (err instanceof FirebaseError) {
         switch (err.code) {
           case "auth/invalid-credential":
           case "auth/wrong-password":
           case "auth/user-not-found":
-            setError("Invalid email or password.");
+            setError(
+              "Invalid email or password. If you signed up with Google, use “Continue with Google”."
+            );
             break;
 
           case "auth/invalid-email":
@@ -76,7 +101,7 @@ export default function LoginPage() {
     try {
       await AuthService.signInWithGoogle();
 
-      router.push("/dashboard");
+      await routeAfterLogin();
     } catch (err) {
       if (err instanceof FirebaseError) {
         setError(err.message);
@@ -96,7 +121,7 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-sm">
           <Link
             href="/"
-            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink-primary dark:text-ink-primary-dark dark:hover:text-ink-primary"
+            className="mb-10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink-primary dark:hover:text-ink-primary"
           >
             <IconArrowLeft size={15} />
             Back to home
