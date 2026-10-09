@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   IconLayoutDashboard,
   IconBook2,
+  IconSchool,
   IconFolder,
   IconNotes,
   IconCards,
@@ -48,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", href: "/dashboard", icon: IconLayoutDashboard },
       { label: "Subjects", href: "/dashboard/subjects", icon: IconBook2 },
       { label: "Study Material", href: "/dashboard/materials", icon: IconFolder },
+      { label: "Academics", href: "/dashboard/academics", icon: IconSchool },
     ],
   },
   {
