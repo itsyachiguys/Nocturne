@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { OpportunityService } from "@/services/OpportunityService";
 import { parseList } from "@/lib/obliqo/skills";
 import type { ExperienceLevel, UserProfile, WorkMode } from "@/lib/obliqo/types";
+import { FIELD, LABEL, chip } from "./styles";
 
 const LEVELS: ExperienceLevel[] = ["intern", "entry", "mid", "senior", "lead"];
 const MODES: WorkMode[] = ["remote", "hybrid", "onsite"];
-const input = "w-full rounded border border-gray-300 px-3 py-2 text-sm";
 
 export default function ProfileTab({ uid, profile, onSaved }: { uid: string; profile: UserProfile | null; onSaved: (p: UserProfile) => void }) {
   const [headline, setHeadline] = useState(profile?.headline ?? "");
@@ -24,7 +24,7 @@ export default function ProfileTab({ uid, profile, onSaved }: { uid: string; pro
 
   const toggleMode = (m: WorkMode) => setModes((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m]));
 
-  async function save(e: React.FormEvent) {
+  async function save(e: FormEvent) {
     e.preventDefault();
     setError("");
     const skillList = parseList(skills);
@@ -46,47 +46,45 @@ export default function ProfileTab({ uid, profile, onSaved }: { uid: string; pro
   }
 
   return (
-    <form onSubmit={save} className="space-y-4">
-      <label className="block text-sm font-medium">Headline
-        <input className={input} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Frontend developer" />
+    <form onSubmit={save} className="card space-y-5 p-6">
+      <label className="block"><span className={LABEL}>Headline</span>
+        <input name="headline" className={`mt-1 ${FIELD}`} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Frontend developer" />
       </label>
-      <label className="block text-sm font-medium">About you
-        <textarea className={input} rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Projects, experience and what you're good at. This is used for semantic matching." />
+      <label className="block"><span className={LABEL}>About you</span>
+        <textarea name="summary" className={`mt-1 ${FIELD}`} rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Projects, experience and what you're good at. This is used for semantic matching." />
       </label>
-      <label className="block text-sm font-medium">Skills (comma-separated)
-        <input className={input} value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="React, TypeScript, Firebase, Git" />
+      <label className="block"><span className={LABEL}>Skills (comma-separated)</span>
+        <input name="skills" className={`mt-1 ${FIELD}`} value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="React, TypeScript, Firebase, Git" />
       </label>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-medium">Years of experience
-          <input type="number" min={0} className={input} value={years} onChange={(e) => setYears(Number(e.target.value))} />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <label className="block"><span className={LABEL}>Years of experience</span>
+          <input name="years" type="number" min={0} className={`mt-1 ${FIELD}`} value={years} onChange={(e) => setYears(Number(e.target.value))} />
         </label>
-        <label className="block text-sm font-medium">Current level
-          <select className={input} value={level} onChange={(e) => setLevel(e.target.value as ExperienceLevel)}>
+        <label className="block"><span className={LABEL}>Current level</span>
+          <select name="level" className={`mt-1 ${FIELD}`} value={level} onChange={(e) => setLevel(e.target.value as ExperienceLevel)}>
             {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </label>
       </div>
-      <label className="block text-sm font-medium">Career goals
-        <textarea className={input} rows={2} value={goals} onChange={(e) => setGoals(e.target.value)} />
+      <label className="block"><span className={LABEL}>Career goals</span>
+        <textarea name="goals" className={`mt-1 ${FIELD}`} rows={2} value={goals} onChange={(e) => setGoals(e.target.value)} />
       </label>
-      <label className="block text-sm font-medium">Target roles (comma-separated)
-        <input className={input} value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="Frontend developer, Full stack engineer" />
+      <label className="block"><span className={LABEL}>Target roles (comma-separated)</span>
+        <input name="roles" className={`mt-1 ${FIELD}`} value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="Frontend developer, Full stack engineer" />
       </label>
-      <fieldset>
-        <legend className="text-sm font-medium">Preferred work mode</legend>
-        <div className="mt-1 flex gap-4">
+      <div>
+        <span className={LABEL}>Preferred work mode</span>
+        <div className="mt-2 flex flex-wrap gap-2">
           {MODES.map((m) => (
-            <label key={m} className="flex items-center gap-1 text-sm">
-              <input type="checkbox" checked={modes.includes(m)} onChange={() => toggleMode(m)} /> {m}
-            </label>
+            <button key={m} type="button" aria-pressed={modes.includes(m)} onClick={() => toggleMode(m)} className={chip(modes.includes(m))}>{m}</button>
           ))}
         </div>
-      </fieldset>
-      <label className="block text-sm font-medium">Preferred locations (comma-separated)
-        <input className={input} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="Ahmedabad, Bengaluru" />
+      </div>
+      <label className="block"><span className={LABEL}>Preferred locations (comma-separated)</span>
+        <input name="locations" className={`mt-1 ${FIELD}`} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="Ahmedabad, Bengaluru" />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={saving} className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+      {error && <p className="text-sm text-coral">{error}</p>}
+      <button disabled={saving} className="btn-primary px-6 py-2.5 text-sm disabled:opacity-60">
         {saving ? "Saving…" : "Save profile"}
       </button>
     </form>

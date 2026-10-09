@@ -4,19 +4,30 @@ import { useState } from "react";
 import { DECISION_META } from "@/lib/obliqo/scoring";
 import { formatHours } from "@/lib/obliqo/learning";
 import type { Job, JobAnalysis } from "@/lib/obliqo/types";
+import { DECISION_STYLE, H4, scoreColor } from "./styles";
 
 const SEVERITY: Record<string, string> = {
-  high: "border-red-300 bg-red-50 text-red-800",
-  medium: "border-amber-300 bg-amber-50 text-amber-800",
-  low: "border-gray-300 bg-gray-50 text-gray-700",
+  high: "border-coral/30 bg-coral/10 text-coral",
+  medium: "border-pastel-orange/30 bg-pastel-orange/10 text-pastel-orange",
+  low: "border-line bg-surface-alt text-ink-secondary dark:border-line-dark dark:bg-surface-alt-dark dark:text-ink-secondary-dark",
 };
-const PRIORITY: Record<string, string> = { High: "text-red-700", Medium: "text-amber-700", Low: "text-gray-600" };
+const PRIORITY: Record<string, string> = {
+  High: "text-coral",
+  Medium: "text-pastel-orange",
+  Low: "text-ink-secondary dark:text-ink-secondary-dark",
+};
+const SECTION = "mb-2 text-xs font-bold uppercase tracking-wider text-ink-muted dark:text-ink-muted-dark";
 
 function Bar({ label, value, weight }: { label: string; value: number; weight: string }) {
   return (
     <div>
-      <div className="flex justify-between text-xs text-gray-600"><span>{label} <span className="text-gray-400">({weight})</span></span><span>{value}%</span></div>
-      <div className="h-1.5 rounded bg-gray-200"><div className="h-1.5 rounded bg-indigo-500" style={{ width: `${value}%` }} /></div>
+      <div className="mb-1 flex justify-between text-xs text-ink-secondary dark:text-ink-secondary-dark">
+        <span>{label} <span className="text-ink-muted dark:text-ink-muted-dark">({weight})</span></span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-surface-alt dark:bg-surface-alt-dark">
+        <div className="h-2 rounded-full bg-brand-gradient" style={{ width: `${value}%` }} />
+      </div>
     </div>
   );
 }
@@ -28,24 +39,30 @@ export default function JobCard({ job, analysis, onDelete, onPlan }: { job: Job;
   const ageDays = Math.max(0, Math.floor((Date.now() - job.postedAt) / 86_400_000));
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <div className="card p-5">
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="truncate font-semibold">{job.url ? <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{job.title}</a> : job.title}</h3>
-          <p className="text-sm text-gray-600">{job.company} · {job.location || job.mode} · {job.mode} · {job.level} · posted {ageDays}d ago</p>
+          <h3 className={`truncate ${H4}`}>
+            {job.url ? <a href={job.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{job.title}</a> : job.title}
+          </h3>
+          <p className="mt-1 text-xs text-ink-secondary dark:text-ink-secondary-dark">
+            {job.company} · {job.location || job.mode} · {job.mode} · {job.level} · posted {ageDays}d ago
+          </p>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold">{a.score}%</div>
-          <span className={`inline-block rounded border px-2 py-0.5 text-xs font-medium ${meta.classes}`}>{meta.icon} {meta.label}</span>
+        <div className="shrink-0 text-right">
+          <div className={`font-display text-3xl font-bold ${scoreColor(a.score)}`}>{a.score}%</div>
+          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${DECISION_STYLE[a.decision]}`}>{meta.icon} {meta.label}</span>
         </div>
       </div>
-      <p className="mt-2 text-sm text-gray-700">{a.decisionReason}</p>
+      <p className="mt-3 text-sm text-ink-secondary dark:text-ink-secondary-dark">{a.decisionReason}</p>
 
-      <button onClick={() => setOpen(!open)} className="mt-2 text-sm text-indigo-600 hover:underline">{open ? "Hide details" : "Why this score?"}</button>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-3 text-sm font-semibold text-lavender-dark hover:underline">
+        {open ? "Hide details" : "Why this score?"}
+      </button>
 
       {open && (
-        <div className="mt-3 space-y-4 border-t pt-3 text-sm">
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 space-y-5 border-t border-line pt-4 text-sm dark:border-line-dark">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Bar label="Semantic similarity" value={a.breakdown.semantic} weight="40%" />
             <Bar label="Skill overlap" value={a.breakdown.skills} weight="30%" />
             <Bar label="Experience alignment" value={a.breakdown.experience} weight="20%" />
@@ -53,33 +70,43 @@ export default function JobCard({ job, analysis, onDelete, onPlan }: { job: Job;
           </div>
 
           <div>
-            <p className="mb-1 font-medium">Skills</p>
-            <div className="flex flex-wrap gap-1">
-              {a.matchedSkills.map((s) => <span key={s} className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800">✓ {s}</span>)}
-              {a.missingSkills.map((s) => <span key={s} className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">⚠ {s}</span>)}
-              {!a.requiredSkills.length && <span className="text-xs text-gray-500">No concrete skills found in this posting.</span>}
+            <p className={SECTION}>Skills</p>
+            <div className="flex flex-wrap gap-1.5">
+              {a.matchedSkills.map((s) => <span key={s} className="rounded-full bg-mint/10 px-2.5 py-0.5 text-xs font-semibold text-mint">✓ {s}</span>)}
+              {a.missingSkills.map((s) => <span key={s} className="rounded-full bg-pastel-orange/10 px-2.5 py-0.5 text-xs font-semibold text-pastel-orange">⚠ {s}</span>)}
+              {!a.requiredSkills.length && <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">No concrete skills found in this posting.</span>}
             </div>
           </div>
 
           {a.strengths.length > 0 && (
-            <div><p className="mb-1 font-medium">💪 Your strengths</p><ul className="list-disc pl-5 text-gray-700">{a.strengths.map((s) => <li key={s}>{s}</li>)}</ul></div>
+            <div>
+              <p className={SECTION}>Your strengths</p>
+              <ul className="list-disc space-y-1 pl-5 text-mint">{a.strengths.map((s) => <li key={s}>{s}</li>)}</ul>
+            </div>
           )}
 
           {a.risks.length > 0 && (
-            <div className="space-y-1">
-              <p className="font-medium">🚨 Risk factors</p>
-              {a.risks.map((r) => <div key={r.type} className={`rounded border px-2 py-1 ${SEVERITY[r.severity]}`}><span className="font-medium capitalize">{r.type.replace(/_/g, " ")}</span>: {r.message}</div>)}
+            <div className="space-y-2">
+              <p className={SECTION}>Risk factors</p>
+              {a.risks.map((r) => (
+                <div key={r.type} className={`rounded-2xl border px-3 py-2 ${SEVERITY[r.severity]}`}>
+                  <span className="font-semibold capitalize">{r.type.replace(/_/g, " ")}</span>: {r.message}
+                </div>
+              ))}
             </div>
           )}
 
           {a.gaps.length > 0 && (
             <div className="space-y-2">
-              <p className="font-medium">Skill gaps</p>
+              <p className={SECTION}>Skill gaps</p>
               {a.gaps.map((g) => (
-                <div key={g.skill} className="rounded border p-2">
-                  <div className="flex justify-between"><span className="font-medium">{g.skill}</span><span className={PRIORITY[g.priority]}>{g.priority} priority · {formatHours(g.estimatedHours)}</span></div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 text-xs">
-                    {g.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{r.label}</a>)}
+                <div key={g.skill} className="rounded-2xl border border-line p-3 dark:border-line-dark">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <span className="font-semibold">{g.skill}</span>
+                    <span className={`text-xs font-semibold ${PRIORITY[g.priority]}`}>{g.priority} priority · {formatHours(g.estimatedHours)}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    {g.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-lavender-dark hover:underline">{r.label}</a>)}
                   </div>
                 </div>
               ))}
@@ -87,15 +114,17 @@ export default function JobCard({ job, analysis, onDelete, onPlan }: { job: Job;
           )}
 
           <div>
-            <p className="mb-1 font-medium">Competition: <span className="capitalize">{a.competition.level}</span> ({a.competition.score}/100)</p>
-            <ul className="list-disc pl-5 text-gray-700">{a.competition.factors.map((f) => <li key={f}>{f}</li>)}</ul>
+            <p className={SECTION}>
+              Competition: <span className="capitalize">{a.competition.level}</span> ({a.competition.score}/100)
+            </p>
+            <ul className="list-disc space-y-1 pl-5 text-ink-secondary dark:text-ink-secondary-dark">{a.competition.factors.map((f) => <li key={f}>{f}</li>)}</ul>
           </div>
         </div>
       )}
 
-      <div className="mt-3 flex gap-3 text-sm">
-        {a.gaps.length > 0 && <button onClick={onPlan} className="rounded bg-indigo-600 px-3 py-1 text-white">Create learning plan</button>}
-        <button onClick={onDelete} className="text-red-600 hover:underline">Remove</button>
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+        {a.gaps.length > 0 && <button type="button" onClick={onPlan} className="btn-primary px-4 py-2 text-xs">Create learning plan</button>}
+        <button type="button" onClick={onDelete} className="text-xs font-semibold text-coral hover:underline">Remove</button>
       </div>
     </div>
   );

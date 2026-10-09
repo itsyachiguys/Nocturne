@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { User } from "firebase/auth";
 import { OpportunityService } from "@/services/OpportunityService";
 import { cosine, embedTexts, semanticScore } from "@/lib/obliqo/embeddings";
@@ -8,9 +8,9 @@ import { analyzeJob } from "@/lib/obliqo/scoring";
 import { parseList } from "@/lib/obliqo/skills";
 import type { Decision, ExperienceLevel, Job, JobAnalysis, Popularity, UserProfile, WorkMode } from "@/lib/obliqo/types";
 import JobCard from "./JobCard";
+import { FIELD, LABEL, MUTED, chip } from "./styles";
 
 const MAX_JOBS = 40;
-const input = "w-full rounded border border-gray-300 px-3 py-2 text-sm";
 const profileText = (p: UserProfile) => [p.headline, p.summary, p.targetRoles.join(" "), p.goals, p.skills.join(" ")].join("\n");
 const jobText = (j: Job) => [j.title, j.description, j.requiredSkills.join(" ")].join("\n");
 
@@ -67,39 +67,39 @@ export default function JobsTab({ user, profile, onEditProfile, onPlanCreated }:
 
   if (!profile) {
     return (
-      <div className="rounded border border-dashed p-6 text-center">
-        <p className="mb-3 text-gray-700">Set up your profile first so jobs can be matched to you.</p>
-        <button onClick={onEditProfile} className="rounded bg-indigo-600 px-4 py-2 text-sm text-white">Create profile</button>
+      <div className="card p-8 text-center">
+        <p className={`mb-4 ${MUTED}`}>Set up your profile first so jobs can be matched to you.</p>
+        <button onClick={onEditProfile} className="btn-primary px-5 py-2.5 text-sm">Create profile</button>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {(["all", "apply", "wait", "skip", "avoid"] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded border px-3 py-1 capitalize ${filter === f ? "bg-indigo-600 text-white" : "bg-white text-gray-700"}`}>{f}</button>
+            <button key={f} type="button" onClick={() => setFilter(f)} aria-pressed={filter === f} className={chip(filter === f)}>{f}</button>
           ))}
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="rounded bg-indigo-600 px-4 py-2 text-sm text-white">{showForm ? "Close" : "+ Add job"}</button>
+        <button type="button" onClick={() => setShowForm(!showForm)} className="btn-primary px-4 py-2 text-sm">{showForm ? "Close" : "+ Add job"}</button>
       </div>
 
       {source === "local" && (
-        <p className="rounded bg-amber-50 p-2 text-xs text-amber-800">
+        <p className="rounded-2xl border border-pastel-orange/30 bg-pastel-orange/10 p-3 text-xs text-pastel-orange">
           Using built-in keyword-based similarity. Configure EMBEDDINGS_API_KEY on the server to enable true semantic embeddings.
         </p>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-coral">{error}</p>}
 
       {showForm && <AddJobForm uid={user.uid} onAdded={(j) => { setJobs((cur) => [j, ...cur]); setShowForm(false); }} onError={setError} />}
 
-      {loading ? <p className="text-gray-500">Loading jobs…</p> : !jobs.length ? (
-        <p className="text-gray-600">No jobs yet. Add a job posting to see your fit score and recommendation.</p>
+      {loading ? <p className={MUTED}>Loading jobs…</p> : !jobs.length ? (
+        <div className="card p-6"><p className={MUTED}>No jobs yet. Add a job posting to see your fit score and recommendation.</p></div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {ranked.map((j) => <JobCard key={j.id} job={j} analysis={analyses[j.id!]} onDelete={() => remove(j)} onPlan={() => plan(j)} />)}
-          {jobs.length > MAX_JOBS && <p className="text-xs text-gray-500">Only your {MAX_JOBS} newest jobs are analyzed.</p>}
+          {jobs.length > MAX_JOBS && <p className="text-xs text-ink-muted dark:text-ink-muted-dark">Only your {MAX_JOBS} newest jobs are analyzed.</p>}
         </div>
       )}
     </div>
@@ -115,7 +115,7 @@ function AddJobForm({ uid, onAdded, onError }: { uid: string; onAdded: (j: Job) 
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((cur) => ({ ...cur, [k]: v }));
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (!f.title.trim() || !f.description.trim()) return onError("A title and description are required.");
     setSaving(true);
@@ -133,33 +133,35 @@ function AddJobForm({ uid, onAdded, onError }: { uid: string; onAdded: (j: Job) 
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-lg border bg-gray-50 p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input className={input} placeholder="Job title *" value={f.title} onChange={(e) => set("title", e.target.value)} />
-        <input className={input} placeholder="Company" value={f.company} onChange={(e) => set("company", e.target.value)} />
-        <input className={input} placeholder="Location" value={f.location} onChange={(e) => set("location", e.target.value)} />
-        <input className={input} placeholder="Job link (optional)" value={f.url} onChange={(e) => set("url", e.target.value)} />
-        <select className={input} value={f.mode} onChange={(e) => set("mode", e.target.value as WorkMode)}>
+    <form onSubmit={submit} className="card space-y-4 p-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <input name="job-title" className={FIELD} placeholder="Job title *" value={f.title} onChange={(e) => set("title", e.target.value)} />
+        <input name="job-company" className={FIELD} placeholder="Company" value={f.company} onChange={(e) => set("company", e.target.value)} />
+        <input name="job-location" className={FIELD} placeholder="Location" value={f.location} onChange={(e) => set("location", e.target.value)} />
+        <input name="job-url" className={FIELD} placeholder="Job link (optional)" value={f.url} onChange={(e) => set("url", e.target.value)} />
+        <select name="job-mode" className={FIELD} value={f.mode} onChange={(e) => set("mode", e.target.value as WorkMode)}>
           {["remote", "hybrid", "onsite"].map((m) => <option key={m}>{m}</option>)}
         </select>
-        <select className={input} value={f.level} onChange={(e) => set("level", e.target.value as ExperienceLevel)}>
+        <select name="job-level" className={FIELD} value={f.level} onChange={(e) => set("level", e.target.value as ExperienceLevel)}>
           {["intern", "entry", "mid", "senior", "lead"].map((m) => <option key={m}>{m}</option>)}
         </select>
-        <label className="text-xs text-gray-600">Posted on<input type="date" className={input} value={f.posted} onChange={(e) => set("posted", e.target.value)} /></label>
-        <label className="text-xs text-gray-600">Company popularity
-          <select className={input} value={f.popularity} onChange={(e) => set("popularity", e.target.value as Popularity)}>
+        <label className="block"><span className={LABEL}>Posted on</span>
+          <input name="job-posted" type="date" className={`mt-1 ${FIELD}`} value={f.posted} onChange={(e) => set("posted", e.target.value)} />
+        </label>
+        <label className="block"><span className={LABEL}>Company popularity</span>
+          <select name="job-popularity" className={`mt-1 ${FIELD}`} value={f.popularity} onChange={(e) => set("popularity", e.target.value as Popularity)}>
             {["low", "medium", "high"].map((m) => <option key={m}>{m}</option>)}
           </select>
         </label>
-        <label className="text-xs text-gray-600">Applicants (if shown, 0 = unknown)
-          <input type="number" min={0} className={input} value={f.applicants} onChange={(e) => set("applicants", Number(e.target.value))} />
+        <label className="block"><span className={LABEL}>Applicants (if shown, 0 = unknown)</span>
+          <input name="job-applicants" type="number" min={0} className={`mt-1 ${FIELD}`} value={f.applicants} onChange={(e) => set("applicants", Number(e.target.value))} />
         </label>
-        <label className="text-xs text-gray-600">Required skills (optional, auto-detected if blank)
-          <input className={input} placeholder="React, TypeScript" value={f.skills} onChange={(e) => set("skills", e.target.value)} />
+        <label className="block"><span className={LABEL}>Required skills (optional, auto-detected if blank)</span>
+          <input name="job-skills" className={`mt-1 ${FIELD}`} placeholder="React, TypeScript" value={f.skills} onChange={(e) => set("skills", e.target.value)} />
         </label>
       </div>
-      <textarea className={input} rows={6} placeholder="Paste the full job description *" value={f.description} onChange={(e) => set("description", e.target.value)} />
-      <button disabled={saving} className="rounded bg-indigo-600 px-4 py-2 text-sm text-white disabled:opacity-50">{saving ? "Saving…" : "Analyze job"}</button>
+      <textarea name="job-description" className={FIELD} rows={6} placeholder="Paste the full job description *" value={f.description} onChange={(e) => set("description", e.target.value)} />
+      <button disabled={saving} className="btn-primary px-5 py-2.5 text-sm disabled:opacity-60">{saving ? "Saving…" : "Analyze job"}</button>
     </form>
   );
 }
