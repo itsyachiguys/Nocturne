@@ -2,13 +2,17 @@
  * Student Life Score (0-100). Web port of the Android LifeScoreCalculator.
  * Pure TypeScript: no React, no Firebase.
  *
- * Weights: Syllabus 25, CGPA 25, Activities & courses 30, Attendance 20.
+ * Weights: Courses & activities 25, Syllabus 20, CGPA 20, Career (Obliqo) 20, Attendance 15.
  * Attendance is deliberately the smallest share. Parts with no data are left out and the rest are rescaled.
  */
-export const WEIGHTS = { attendance: 20, syllabus: 25, cgpa: 25, activities: 30 } as const; // sums to 100
+export const WEIGHTS = { attendance: 15, syllabus: 20, cgpa: 20, activities: 25, career: 20 } as const; // sums to 100
 export const CGPA_SCALE_MAX = 10;
 /** Completed courses / extracurriculars needed for a full 100% in the activities part. */
 export const ACTIVITY_TARGET = 5;
+/** Career part = 60% profile completeness + 40% job activity. Activity: this many applications = 100% (a saved job counts a quarter). */
+export const APPLIED_TARGET = 5;
+export const SAVED_CREDIT = 0.25;
+export const CAREER_PROFILE_SHARE = 0.6;
 
 export type PartKey = keyof typeof WEIGHTS;
 
@@ -30,6 +34,7 @@ export interface Inputs {
   syllabus?: number | null;
   cgpa?: number | null;
   activities?: number | null; // already a 0-100 percentage
+  career?: number | null;     // already a 0-100 percentage
 }
 export interface Options {
   /** Leave missing inputs out and scale the remaining weights to 100 (default false: missing counts as 0). */

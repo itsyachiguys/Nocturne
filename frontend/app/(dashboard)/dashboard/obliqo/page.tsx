@@ -13,6 +13,7 @@ import {
 import { UI } from "@/lib/obliqo/ui";
 import PlanCard from "./PlanCard";
 import PlanWizard from "./PlanWizard";
+import ProfileTab from "./ProfileTab";
 import type { Roadmap } from "@/lib/obliqo/roadmaps";
 
 /* Look & feel lives in lib/obliqo/ui.ts. */
@@ -152,7 +153,7 @@ export default function ObliqoPage() {
   if (!idx || uid === undefined) return <div className={`${UI.card} p-6 text-sm ${UI.muted}`}>Loading listings...</div>;
 
   const hasSkills = profile.skills.length > 0;
-  const tabs: [Tab, string][] = [["jobs", "Jobs"], ["skills", "My Skills"], ["plans", `Learning Plans${profile.planSkills.length ? ` (${profile.planSkills.length})` : ""}`], ["saved", `Saved${Object.keys(statuses).length ? ` (${Object.keys(statuses).length})` : ""}`]];
+  const tabs: [Tab, string][] = [["jobs", "Jobs"], ["profile", "Profile"], ["skills", "My Skills"], ["plans", `Learning Plans${profile.planSkills.length ? ` (${profile.planSkills.length})` : ""}`], ["saved", `Saved${Object.keys(statuses).length ? ` (${Object.keys(statuses).length})` : ""}`]];
 
   return (
     <div className="space-y-4">
@@ -219,6 +220,7 @@ export default function ObliqoPage() {
         </>
       )}
 
+      {tab === "profile" && uid && <ProfileTab uid={uid} idx={idx} profile={profile} update={update} />}
       {tab === "skills" && <SkillsTab idx={idx} profile={profile} update={update} gaps={gaps} addPlan={addPlan} />}
       {tab === "plans" && <PlansTab profile={profile} update={update} gaps={gaps} addPlan={addPlan} />}
       {tab === "saved" && (

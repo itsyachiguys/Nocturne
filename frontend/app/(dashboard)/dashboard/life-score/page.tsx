@@ -12,6 +12,7 @@ const HINTS: Record<PartKey, string> = {
   syllabus: "Update your progress on each subject.",
   cgpa: "Enter your current CGPA in your profile.",
   activities: "Add courses and extracurriculars on the Activities page.",
+  career: "Complete your Profile in Obliqo (CV import helps) and save or apply to jobs.",
 };
 
 export default function LifeScorePage() {
@@ -32,7 +33,7 @@ export default function LifeScorePage() {
         <ScoreRing score={result.score} label={result.label} size={140} />
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold" style={{ color: scoreColor(result.score) }}>{result.label}</h1>
-          <p className={`text-sm ${UI.muted}`}>Your Life Score combines syllabus progress, CGPA, courses and extracurriculars, and attendance. Attendance counts the least.</p>
+          <p className={`text-sm ${UI.muted}`}>Your Life Score combines courses and extracurriculars, syllabus progress, CGPA, your Obliqo career profile, and attendance. Attendance counts the least.</p>
         </div>
       </section>
 
@@ -59,6 +60,8 @@ export default function LifeScorePage() {
                 {p.has ? `${p.points.toFixed(1)} of ${p.maxPoints.toFixed(1)} points` : "Not counted yet"}
                 {k === "activities" && inputs ? ` · ${inputs.activitiesDone} of ${inputs.activitiesTotal} completed` : ""}
                 {k === "activities" && <> · <Link href="/dashboard/activities" className="underline">Manage</Link></>}
+                {k === "career" && inputs ? ` · profile ${Math.round(inputs.careerProfile)}% complete · ${inputs.careerApplied} applied · ${inputs.careerSaved} saved` : ""}
+                {k === "career" && <> · <Link href="/dashboard/obliqo" className="underline">Open Obliqo</Link></>}
               </div>
             </div>
           );

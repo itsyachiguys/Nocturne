@@ -10,6 +10,7 @@ export const PART_NAMES: Record<PartKey, string> = {
   syllabus: "Syllabus",
   cgpa: "CGPA",
   activities: "Courses & activities",
+  career: "Career (Obliqo)",
   attendance: "Attendance",
 };
 

@@ -70,7 +70,7 @@ export async function saveProfile(uid: string, p: Profile) {
 }
 
 /* ---- UI preferences: filters, sort and the open tab ---- */
-export type Tab = "jobs" | "skills" | "plans" | "saved";
+export type Tab = "jobs" | "profile" | "skills" | "plans" | "saved";
 export type Sort = "match" | "stipend" | "newest";
 export interface Prefs { filters: Filters; sort: Sort; tab: Tab }
 const prefsRef = (uid: string) => doc(db, "users", uid, "obliqo", "prefs");
@@ -82,7 +82,7 @@ export async function loadPrefs(uid: string): Promise<Partial<Prefs> | null> {
   const out: Partial<Prefs> = {};
   if (d.filters && typeof d.filters === "object") out.filters = { ...DEFAULT_FILTERS, ...d.filters };
   if (d.sort === "match" || d.sort === "stipend" || d.sort === "newest") out.sort = d.sort;
-  if (d.tab === "jobs" || d.tab === "skills" || d.tab === "plans" || d.tab === "saved") out.tab = d.tab;
+  if (d.tab === "jobs" || d.tab === "profile" || d.tab === "skills" || d.tab === "plans" || d.tab === "saved") out.tab = d.tab;
   return out;
 }
 export async function savePrefs(uid: string, p: Prefs) {

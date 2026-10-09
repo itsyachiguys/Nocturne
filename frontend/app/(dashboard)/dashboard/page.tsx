@@ -1497,7 +1497,8 @@ export default function DashboardPage() {
   return (
     <>
       {/* ---------------- Greeting ---------------- */}
-      <Reveal show={ready} className="mb-5">
+      {/* mb-9 = the 24px gap used below the card + the 12px the "Life Score" badge sticks up above it */}
+      <Reveal show={ready} className="mb-9">
         <header>
           <h1 className="text-2xl font-bold leading-tight sm:text-[26px]">
             {greeting}, {name}
