@@ -39,9 +39,10 @@ import {
 
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { Topbar } from "@/components/Topbar";
 import { LEADERBOARD } from "@/lib/dashboard-data";
 import { SUBJECTS } from "@/lib/academic-data";
+import LifeScoreCard from "@/components/lifescore/LifeScoreCard";
+
 import {
   addTask,
   setTaskDone,
@@ -1488,12 +1489,44 @@ export default function DashboardPage() {
 
   const ringsLoading = !day;
 
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const dateLabel = now
+    ? now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+    : "";
+
   return (
     <>
-      <Topbar
-        studentName={name}
-        quote="Small steps, every night, compound into mastery."
-      />
+      {/* ---------------- Greeting ---------------- */}
+      <Reveal show={ready} className="mb-5">
+        <header>
+          <h1 className="text-2xl font-bold leading-tight sm:text-[26px]">
+            {greeting}, {name}
+          </h1>
+          <p className="mt-1 text-sm text-ink-secondary dark:text-ink-secondary-dark">
+            {dateLabel && `${dateLabel} · `}
+            &ldquo;Small steps, every night, compound into mastery.&rdquo;
+          </p>
+        </header>
+      </Reveal>
+
+      {/* ---------------- Life Score spotlight ---------------- */}
+      <Reveal show={ready} delay={40} className="mb-6">
+        <section className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-2 rounded-[32px] bg-brand-gradient opacity-20 blur-2xl"
+          />
+          <span className="absolute -top-3 left-6 z-10 inline-flex items-center gap-1.5 rounded-full bg-brand-gradient px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white shadow-soft">
+            <IconSparkles size={12} />
+            Life Score
+          </span>
+          <div className="relative rounded-3xl bg-brand-gradient p-[2px] shadow-[0_20px_50px_-20px_rgba(139,123,224,0.65)]">
+            <div className="rounded-[22px] bg-surface-card p-2 dark:bg-surface-card-dark">
+              <LifeScoreCard />
+            </div>
+          </div>
+        </section>
+      </Reveal>
 
       {/* ---------------- Hero: today's rings ---------------- */}
       <Reveal show={ready} className="mb-5">
